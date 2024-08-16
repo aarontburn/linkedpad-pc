@@ -11,7 +11,7 @@ export class ColorHandler {
     public static readonly BLUE: RGB = [0, 0, 255];
     public static readonly VIOLET: RGB = [125, 0, 255];
 
-    public static readonly COLOR_SEQ: RGB[] = [
+    private static readonly COLOR_SEQ: RGB[] = [
         ColorHandler.WHITE,
         ColorHandler.RED,
         ColorHandler.YELLOW,
@@ -45,6 +45,10 @@ export class ColorHandler {
         }
 
         return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
+    }
+
+    public static getAvailableColors(): RGB[] {
+        return [...this.COLOR_SEQ];
     }
 
 

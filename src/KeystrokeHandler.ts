@@ -54,15 +54,24 @@ export class KeystrokeHandler {
         return this.keyMapToObj();
     }
 
+    public static pressMacroKey(rowCol: string) {
+        const recordedKey: string | string[] = this.keyMap.get(rowCol);
+
+        if (!recordedKey) {
+            return
+        }
+        this.sendKey(recordedKey) // maybe use await?
+    }
+
 
     public static async sendKey(key: string[] | string) {
         if (typeof key === "string") {
-            await ks.sendKey(key);
+            await ks.sendText(key);
             return;
         }
+        const keyList: string[] = key as string[];
 
-
-        await ks.sendCombination(key);
+        await ks.sendCombination(keyList.filter(k => k !== null));
     }
 
 

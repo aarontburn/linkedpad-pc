@@ -2,18 +2,30 @@
 
     const CHANNEL_NAME: string = ":3";
 
-
     function sendToProcess(eventType: string, ...data: any[]) {
         return window.ipc.send(CHANNEL_NAME, eventType, ...data);
     }
 
+    function isRGBEqual(rgb1: number[], rgb2: number[]): boolean {
+        return (JSON.stringify([...rgb1].sort()) === JSON.stringify([...rgb2].sort()));
+    }
+
+   function rgbToHex(color: [number, number, number]): string {
+        const componentToHex: (c: number) => string = (c: number) => {
+            const hex: string = c.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        }
+
+        return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
+    }
 
     function getElement(id: string): HTMLElement {
         const query: HTMLElement = document.getElementById(id);
-        if (query === undefined) {
-            console.log("Could not find element with ID: " + id)
+        if (query === null) {
+            console.log("Could not find element with ID: " + id);
+            return undefined
         }
-        return query
+        return query;
     }
 
     sendToProcess("init");
@@ -31,14 +43,29 @@
 
     let selectedKey: string = undefined;
     let selectedKeySlot: number = 0;
+    let localState: { [rowCol: string]: number[] } = (() => {
+        const obj: { [rowCol: string]: number[] } = {};
+        for (const rowCol of KEYS) {
+            obj[rowCol] = [0, 0, 0];
+        }
+        return obj
+    })();
+    let inLinkedMode: boolean = false;
 
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
             case 'light-change': {
-                // const state: any = data[0];
-                // for (const button in state) {
-                //     getElement(button).style.backgroundColor = `rgb(${state[button][0]}, ${state[button][1]}, ${state[button][2]})`
-                // }
+                const state: { [rowCol: string]: number[] } = data[0];
+
+                for (const rowCol in state) {
+                    const rgb: number[] = state[rowCol];
+                    localState[rowCol] = rgb;
+
+                    if (inLinkedMode) {
+                        getElement(rowCol).style.backgroundColor = isRGBEqual(rgb, [0, 0, 0]) ? 'transparent' : `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                    }
+                }
+
                 break;
             }
             case 'key-options': {
@@ -49,31 +76,87 @@
                 keyMap = data[0];
                 break;
             }
+            case 'color-options': {
+                const colors: [number, number, number][] = data[0];
+
+                for (const rgb of colors) {
+                    const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
+                    getElement('color-list').insertAdjacentHTML('beforeend', `
+                        <div 
+                            class='color'  
+                            style='background-color: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]});'
+                            id='color-${hex}'
+                            >
+                        </div>
+                        `
+                    )
+                    getElement(`color-${hex}`).addEventListener('click', () => {
+                        console.log(rgb)
+                    });
+
+                }
+
+                break;
+            }
         }
     });
 
 
     const linkedModeToggle: HTMLInputElement = getElement('linked-mode-slider') as HTMLInputElement;
     linkedModeToggle.addEventListener('change', () => {
-        sendToProcess('linked-mode', linkedModeToggle.checked);
+        inLinkedMode = linkedModeToggle.checked;
+        sendToProcess('linked-mode', inLinkedMode);
+
+        if (selectedKey !== undefined) {
+            getElement(selectedKey).style.borderColor = '';
+        }
+        selectedKey = undefined;
+
+        getElement('close-key-settings').click();
+        getElement('key-list-row').style.height = inLinkedMode ? '0' : '100%'; // Collapse key chooser
+
+        for (const rowCol of KEYS) {
+            const rgb: number[] = localState[rowCol];
+            getElement(rowCol).style.backgroundColor = inLinkedMode && !isRGBEqual(rgb, [0, 0, 0])
+                ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+                : 'transparent'
+        }
+
+
+        Array.from(document.getElementsByClassName('linked-settings')).forEach((element: HTMLElement) => {
+            element.style.opacity =  inLinkedMode ? '1' : '0';
+            element.style.width = inLinkedMode ? '30%' : '0';
+            element.style.margin = inLinkedMode ? '0 15px' : '0 0';
+        });
     });
 
-
-    const toggle: HTMLElement = getElement('keys-text-toggle');
-    const textToggle: HTMLElement = getElement('text-toggle')
-    const keyToggle: HTMLElement = getElement('key-toggle')
-    toggle.addEventListener('change', () => {
-        textToggle.style.display = !(toggle as any)['checked'] ? 'none' : 'inline-block';
-        keyToggle.style.display = (toggle as any)['checked'] ? 'none' : 'flex';
+    const brightnessSlider: HTMLInputElement = getElement('brightness-slider') as HTMLInputElement;
+    brightnessSlider.addEventListener('input', () => {
+        getElement('brightness-label').innerHTML = `Brightness (${brightnessSlider.value}%)`;
+        sendToProcess('brightness-modified', brightnessSlider.value);
     });
-
 
     const keySettings: HTMLElement = getElement('key-settings');
     getElement('close-key-settings').addEventListener('click', () => {
         keySettings.style.opacity = '0';
         keySettings.style.marginLeft = '0';
         keySettings.style.width = '0';
+
+        if (selectedKey !== undefined) {
+            getElement(selectedKey).style.borderColor = '';
+        }
+        selectedKey = undefined;
     });
+
+    const toggle: HTMLElement = getElement('keys-text-toggle');
+    const textToggle: HTMLElement = getElement('text-toggle')
+    const keyToggle: HTMLElement = getElement('key-toggle')
+    toggle.addEventListener('change', () => {
+        textToggle.style.display = !(toggle as HTMLInputElement).checked ? 'none' : 'inline-block';
+        keyToggle.style.display = (toggle as HTMLInputElement).checked ? 'none' : 'flex';
+    });
+
+
 
     for (let i = 0; i < 4; i++) {
         getElement(`key-slot-${i}`).addEventListener('click', () => {
@@ -103,10 +186,15 @@
 
 
     const selectedKeyLabel: HTMLElement = getElement('selected-key-label');
-    function setSelectedKey(rowCol: string, slotNum: number) {
+    function setSelectedKey(rowCol: string, slotNum: number = 0) {
         if (slotNum < 0 || slotNum > 3) {
             console.log("Invalid key slot passed: " + slotNum)
             return
+        }
+
+
+        if (inLinkedMode) { // dont update in linked mode
+            return;
         }
 
         if (selectedKey !== rowCol) {
@@ -178,6 +266,9 @@
         const keySettings: HTMLElement = getElement('key-settings');
         for (const rowCol of [...KEYS, ...HEADERS]) {
             getElement(rowCol).addEventListener('click', () => {
+                if (inLinkedMode) {
+                    return
+                }
                 keySettings.style.opacity = '1';
                 keySettings.style.marginLeft = '50px';
                 keySettings.style.width = '255px';

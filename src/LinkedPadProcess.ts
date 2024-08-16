@@ -10,7 +10,7 @@ import { SerialHandler } from "./SerialHandler";
 
 
 
-export class LinkedPadProcess  {
+export class LinkedPadProcess {
 
     private static readonly MODULE_NAME: string = "Linked Pad";
     private static readonly MODULE_ID: string = "aarontburn.Linked_Pad";
@@ -47,30 +47,33 @@ export class LinkedPadProcess  {
     }
 
     public initialize(): void {
-        // SerialHandler.init(this.onClick.bind(this));
+        SerialHandler.init(this.onPress.bind(this));
 
         KeystrokeHandler.init();
 
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
+        this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
 
-        // this.initPad();
+        this.initDatabase();
+
+
 
     }
 
     public onExit(): void {
-        // SerialHandler.stop()
+        SerialHandler.stop()
     }
 
 
-    private async initPad() {
+    private async initDatabase() {
         console.log("Initializing...");
 
         this.checkDatabase().then(() => {
             this.collection.findOne({}).then(async data => {
                 this.ready = true;
                 await this.recalibrate();
-                this.listen().catch(this.initPad); // Reboot if error
+                this.listen().catch(this.initDatabase); // Reboot if error
             });
         });
     }
@@ -172,7 +175,7 @@ export class LinkedPadProcess  {
         }
     }
 
-    private handleHeaders(col: string): void {
+    private handleLinkedHeaders(col: string): void {
         switch (col) {
             case '0': {
                 ColorHandler.nextColor()
@@ -199,26 +202,34 @@ export class LinkedPadProcess  {
 
     }
 
-    private async onClick(row: string, col: string): Promise<void> {
-        if (!this.ready) {
-            return
-        }
-        if (row === 'H') {
-            this.handleHeaders(col);
+    private async onPress(row: string, col: string): Promise<void> {
+        if (this.inLinkedMode) {
+            if (!this.ready) {
+                return;
+            }
+            if (row === 'H') {
+                this.handleLinkedHeaders(col);
+                return;
+            }
+            try {
+                const isOff: boolean = ColorHandler.isEqual(this.localState[row + col], ColorHandler.OFF)
+
+                await this.collection.findOneAndUpdate(
+                    { 'accessID': this.ACCESS_ID },
+                    { "$set": { [row + col]: isOff ? ColorHandler.getCurrentColor() : ColorHandler.OFF } }
+                )
+            } catch (e) {
+                console.log("DB no longer connected. Reinitializing...");
+
+                this.initDatabase()
+            }
+
             return;
         }
-        try {
-            const isOff: boolean = ColorHandler.isEqual(this.localState[row + col], ColorHandler.OFF)
+        // Macro mode
+        KeystrokeHandler.pressMacroKey(row + col);
 
-            await this.collection.findOneAndUpdate(
-                { 'accessID': this.ACCESS_ID },
-                { "$set": { [row + col]: isOff ? ColorHandler.getCurrentColor() : ColorHandler.OFF } }
-            )
-        } catch (e) {
-            console.log("DB no longer connected. Reinitializing...");
 
-            this.initPad()
-        }
     }
 
 
@@ -236,7 +247,7 @@ export class LinkedPadProcess  {
             if (t === undefined) {
                 s += '#ZZZZZZ ';
             } else {
-                s += ColorHandler.rgbToHex(t) + "  "
+                s += ColorHandler.rgbToHex(t) + "  ";
             }
         }
 
@@ -255,16 +266,15 @@ export class LinkedPadProcess  {
                 const row: string = data[0];
                 const col: string = data[1];
 
-                this.onClick(row, col)
+                this.onPress(row, col);
 
                 break;
             }
             case 'reset': {
                 this.reset()
                 break;
-            } 
+            }
             case 'set-key': {
-                console.log(data)
                 const rowCol: string = data[0];
                 const keyInfo: string | string[] = data[1];
 
@@ -275,7 +285,12 @@ export class LinkedPadProcess  {
             }
             case 'linked-mode': {
                 this.inLinkedMode = data[0];
-                console.log(this.inLinkedMode)
+                break;
+            }
+            case 'brightness-modified': {
+                const brightnessPercentage: number = (data[0] as number) / 100;
+                console.log(brightnessPercentage)
+
                 break;
             }
         }

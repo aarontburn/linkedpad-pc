@@ -17,7 +17,12 @@ export class SerialHandler {
     }
 
     public static stop(): void {
-        // this.ser?.close();
+        this.ser?.close((err) => {
+            if (err) {
+                console.log("Error closing serial port")
+                console.log(err)
+            }
+        });
     }
 
 
