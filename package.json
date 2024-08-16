@@ -1,34 +1,38 @@
 {
-  "name": "electron-quick-start-typescript",
+  "name": "linkedpad",
   "version": "1.0.0",
-  "description": "A minimal Electron application written with Typescript",
+  "description": "A linked pad.",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "tsc  && node copyFiles.js",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && node copyFiles.js && electron ./dist/main.js"
+    "start": "npm run build && electron ./dist/main.js",
+    "package": "npm run build && npx electron-builder build"
   },
-  "repository": "https://github.com/electron/electron-quick-start-typescript",
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo",
-    "typescript"
-  ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
+  "author": "aarontburn",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "electron": "^28.1.0",
     "eslint": "^7.32.0",
-    "typescript": "^4.8.3"
+    "typescript": "^4.8.3",
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
     "mongodb": "^6.8.0",
     "node-key-sender": "^1.0.11",
     "serialport": "^12.0.0"
+  },
+  "productName": "LinkedPad",
+
+  "main": "./dist/main.js",
+  "build": {
+    "appId": "com.aarontburn.LinkedPad",
+    "asar": true,
+    "files": [
+      "./dist/**/*"
+    ],
+    "directories": {
+      "output": "package"
+    }
   }
 }
