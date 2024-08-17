@@ -7,7 +7,7 @@
     }
 
     function isRGBEqual(rgb1: number[], rgb2: number[]): boolean {
-        return (JSON.stringify([...rgb1].sort()) === JSON.stringify([...rgb2].sort()));
+        return (JSON.stringify([...rgb1]) === JSON.stringify([...rgb2]));
     }
 
    function rgbToHex(color: [number, number, number]): string {
@@ -79,6 +79,7 @@
             case 'color-options': {
                 const colors: [number, number, number][] = data[0];
 
+                let prevColor: HTMLElement = undefined;
                 for (const rgb of colors) {
                     const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
                     getElement('color-list').insertAdjacentHTML('beforeend', `
@@ -90,8 +91,15 @@
                         </div>
                         `
                     )
-                    getElement(`color-${hex}`).addEventListener('click', () => {
-                        console.log(rgb)
+
+                    const element: HTMLElement = getElement(`color-${hex}`);
+                    element.addEventListener('click', () => {
+                        sendToProcess('selected-color-changed', hex);
+                        if (prevColor) {
+                            prevColor.style.outline = '';
+                        }
+                        element.style.outline = 'white solid';
+                        prevColor = element
                     });
 
                 }
@@ -267,6 +275,7 @@
         for (const rowCol of [...KEYS, ...HEADERS]) {
             getElement(rowCol).addEventListener('click', () => {
                 if (inLinkedMode) {
+                    sendToProcess('button-press', rowCol[0], rowCol[1])
                     return
                 }
                 keySettings.style.opacity = '1';

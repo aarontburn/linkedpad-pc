@@ -2,7 +2,9 @@
 
 export class Settings {
 
-
+    public static registerSettings(): void {
+        new Setting<string>('Selected Color', '#ffffff') 
+    }
 
 
 
@@ -15,7 +17,7 @@ class Setting<T> {
 
     private value: T;
 
-    constructor(defaultValue: T) {
+    constructor(name: string, defaultValue: T) {
         this.value = defaultValue;
     }
 

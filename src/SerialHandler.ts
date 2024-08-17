@@ -2,6 +2,9 @@ import { ReadlineParser, SerialPort } from 'serialport'
 
 
 export class SerialHandler {
+    private static readonly UNOPENED_PORT_ERR_MSG: string = 'Port is not open';
+    private static readonly NO_DEVICE_FOUND_ERR_MSG: string = 'Opening COM3: File not found';
+
 
     private static readonly PORT: string = 'COM3';
     private static readonly BAUD: number = 9600;
@@ -14,13 +17,19 @@ export class SerialHandler {
         this.establishSerial().then(() => {
             this.attemptConnection().then(() => this.listen(onClickCallback))
         })
+        this.write('hi')
     }
 
     public static stop(): void {
         this.ser?.close((err) => {
             if (err) {
-                console.log("Error closing serial port")
-                console.log(err)
+                if (err.message === this.UNOPENED_PORT_ERR_MSG) { // Port is not opened
+                    // Do nothing
+                } else {
+                    console.log("Error closing serial port.")
+                    console.log(err)
+                }
+
             }
         });
     }
@@ -40,7 +49,11 @@ export class SerialHandler {
                 (err) => {
                     if (err) {
                         console.log("Error opening serial port.")
-                        console.log(err)
+                        if (err.message === this.NO_DEVICE_FOUND_ERR_MSG) {
+                            console.log("\tDevice (under COM3) not found.")
+                        } else {
+                            console.log(err)
+                        }
                         return;
                     }
                     this.parser = this.ser.pipe(new ReadlineParser({ delimiter: '\n' }));

@@ -228,8 +228,6 @@ export class LinkedPadProcess {
         }
         // Macro mode
         KeystrokeHandler.pressMacroKey(row + col);
-
-
     }
 
 
@@ -262,12 +260,11 @@ export class LinkedPadProcess {
                 this.initialize();
                 break;
             }
-            case 'button-click': {
+            case 'button-press': {
                 const row: string = data[0];
                 const col: string = data[1];
 
                 this.onPress(row, col);
-
                 break;
             }
             case 'reset': {
@@ -290,7 +287,11 @@ export class LinkedPadProcess {
             case 'brightness-modified': {
                 const brightnessPercentage: number = (data[0] as number) / 100;
                 console.log(brightnessPercentage)
-
+                break;
+            }
+            case 'selected-color-changed': {
+                const hex: string = data[0];
+                ColorHandler.setColor(ColorHandler.hexToRGB(hex))
                 break;
             }
         }

@@ -22,20 +22,40 @@ export class ColorHandler {
 
 
     private static currentColorIndex: number = 0;
+    private static currentColor: RGB = this.COLOR_SEQ[this.currentColorIndex];
 
     public static getCurrentColor(): RGB {
-        return this.COLOR_SEQ[ColorHandler.currentColorIndex]
+        return this.currentColor;
     }
 
+
     public static nextColor(): void {
-        ColorHandler.currentColorIndex++;
-        if (ColorHandler.currentColorIndex > ColorHandler.COLOR_SEQ.length - 1) {
-            ColorHandler.currentColorIndex = 0;
+        const i: number = this.currentColorIndex;
+        this.setColor(this.COLOR_SEQ[((i + 1) > this.COLOR_SEQ.length - 1) ? 0 : i + 1])
+    }
+
+
+    public static setColor(rgb: RGB): void {
+        for (let i = 0; i < this.COLOR_SEQ.length; i++) {
+            if (this.isEqual(this.COLOR_SEQ[i], rgb)) {
+                this.currentColorIndex = i;
+                this.currentColor = this.COLOR_SEQ[this.currentColorIndex];
+                return;
+            }
         }
+
+        console.error("ERROR: Invalid rgb passed (rgb not within available colors): " + rgb);
+        this.setColor(this.COLOR_SEQ[0]);
+    }
+
+
+
+    public static getAvailableColors(): RGB[] {
+        return [...this.COLOR_SEQ];
     }
 
     public static isEqual(color1: RGB, color2: RGB): boolean {
-        return JSON.stringify([...color1].sort()) === JSON.stringify([...color2].sort());
+        return JSON.stringify([...color1]) === JSON.stringify([...color2]);
     }
 
     public static rgbToHex(color: RGB): string {
@@ -47,9 +67,15 @@ export class ColorHandler {
         return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
     }
 
-    public static getAvailableColors(): RGB[] {
-        return [...this.COLOR_SEQ];
+    public static hexToRGB(hex: string): RGB {
+        const bigint: number = parseInt(hex, 16);
+        const r: number = (bigint >> 16) & 255;
+        const g: number = (bigint >> 8) & 255;
+        const b: number = bigint & 255;
+
+        return [r, g, b];
     }
+
 
 
 
