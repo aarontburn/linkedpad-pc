@@ -151,6 +151,7 @@ td:hover {
 	opacity: 0;
 	margin-left: 0;
 	width: 0;
+	pointer-events: none;
 }
 
 #text-toggle {
@@ -203,7 +204,7 @@ td:hover {
 	align-items: end;
 
 	width: 30%;
-	border: 1px solid white;
+	/* border: 1px solid white; */
 
 	height: 400px;
 	transition: 0.5s;
@@ -212,7 +213,9 @@ td:hover {
 	opacity: 0;
 	margin: 0 0;
 	width: 0;
+	pointer-events: none;
 }
+
 
 .color {
 	border: 2px solid var(--off-black);
@@ -222,9 +225,10 @@ td:hover {
 	width: 25px;
 	cursor: pointer;
 	margin: 5px;
+	transition: 0.05s;
 }
+
 
 #color-list {
 	display: flex;
-	flex-wrap: wrap;
 }

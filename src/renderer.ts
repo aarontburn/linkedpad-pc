@@ -1,4 +1,5 @@
 (() => {
+    type RGB = [number, number, number];
 
     const CHANNEL_NAME: string = ":3";
 
@@ -6,17 +7,26 @@
         return window.ipc.send(CHANNEL_NAME, eventType, ...data);
     }
 
-    function isRGBEqual(rgb1: number[], rgb2: number[]): boolean {
-        return (JSON.stringify([...rgb1]) === JSON.stringify([...rgb2]));
+    function isRGBEqual(rgb1: RGB, rgb2: RGB): boolean {
+        return JSON.stringify([...rgb1]) === JSON.stringify([...rgb2]);
     }
 
-   function rgbToHex(color: [number, number, number]): string {
+    function rgbToHex(color: RGB): string {
         const componentToHex: (c: number) => string = (c: number) => {
             const hex: string = c.toString(16);
             return hex.length === 1 ? "0" + hex : hex;
         }
 
         return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
+    }
+
+    function hexToRGB(hex: string): RGB {
+        const bigint: number = parseInt(hex, 16);
+        const r: number = (bigint >> 16) & 255;
+        const g: number = (bigint >> 8) & 255;
+        const b: number = bigint & 255;
+
+        return [r, g, b];
     }
 
     function getElement(id: string): HTMLElement {
@@ -43,22 +53,22 @@
 
     let selectedKey: string = undefined;
     let selectedKeySlot: number = 0;
-    let localState: { [rowCol: string]: number[] } = (() => {
-        const obj: { [rowCol: string]: number[] } = {};
+    let localState: { [rowCol: string]: RGB } = (() => {
+        const obj: { [rowCol: string]: RGB } = {};
         for (const rowCol of KEYS) {
             obj[rowCol] = [0, 0, 0];
         }
-        return obj
+        return obj;
     })();
     let inLinkedMode: boolean = false;
 
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
             case 'light-change': {
-                const state: { [rowCol: string]: number[] } = data[0];
+                const state: { [rowCol: string]: RGB } = data[0];
 
                 for (const rowCol in state) {
-                    const rgb: number[] = state[rowCol];
+                    const rgb: RGB = state[rowCol];
                     localState[rowCol] = rgb;
 
                     if (inLinkedMode) {
@@ -77,9 +87,8 @@
                 break;
             }
             case 'color-options': {
-                const colors: [number, number, number][] = data[0];
+                const colors: RGB[] = data[0];
 
-                let prevColor: HTMLElement = undefined;
                 for (const rgb of colors) {
                     const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
                     getElement('color-list').insertAdjacentHTML('beforeend', `
@@ -95,19 +104,41 @@
                     const element: HTMLElement = getElement(`color-${hex}`);
                     element.addEventListener('click', () => {
                         sendToProcess('selected-color-changed', hex);
-                        if (prevColor) {
-                            prevColor.style.outline = '';
-                        }
-                        element.style.outline = 'white solid';
-                        prevColor = element
                     });
 
                 }
-
                 break;
             }
+            case 'selected-color': {
+                setSelectedColor(data[0])
+                break;
+            }
+            case 'brightness-changed': {
+                const brightness: number = data[0];
+                const percent: number = Math.round(brightness * 100)
+                getElement('brightness-label').innerHTML = `Brightness (${percent}%)`;
+                (getElement('brightness-slider') as HTMLInputElement).value = `${percent}`;
+                break;
+            }
+            case 'connection-status': {
+                const status: number = data[0];
+                console.log(status)
+            }
+
         }
     });
+
+
+    let prevSelectedColor: HTMLElement = undefined;
+    function setSelectedColor(rgb: RGB): void {
+        const hex: string = rgbToHex(rgb).substring(1);
+        if (prevSelectedColor) {
+            prevSelectedColor.style.outline = '';
+        }
+        const newColor: HTMLElement = getElement(`color-${hex}`);
+        newColor.style.outline = 'white solid';
+        prevSelectedColor = newColor;
+    }
 
 
     const linkedModeToggle: HTMLInputElement = getElement('linked-mode-slider') as HTMLInputElement;
@@ -124,7 +155,7 @@
         getElement('key-list-row').style.height = inLinkedMode ? '0' : '100%'; // Collapse key chooser
 
         for (const rowCol of KEYS) {
-            const rgb: number[] = localState[rowCol];
+            const rgb: RGB = localState[rowCol];
             getElement(rowCol).style.backgroundColor = inLinkedMode && !isRGBEqual(rgb, [0, 0, 0])
                 ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
                 : 'transparent'
@@ -132,15 +163,16 @@
 
 
         Array.from(document.getElementsByClassName('linked-settings')).forEach((element: HTMLElement) => {
-            element.style.opacity =  inLinkedMode ? '1' : '0';
+            element.style.opacity = inLinkedMode ? '1' : '0';
             element.style.width = inLinkedMode ? '30%' : '0';
             element.style.margin = inLinkedMode ? '0 15px' : '0 0';
+            element.style.pointerEvents = inLinkedMode ? 'all' : 'none';
+        
         });
     });
 
     const brightnessSlider: HTMLInputElement = getElement('brightness-slider') as HTMLInputElement;
     brightnessSlider.addEventListener('input', () => {
-        getElement('brightness-label').innerHTML = `Brightness (${brightnessSlider.value}%)`;
         sendToProcess('brightness-modified', brightnessSlider.value);
     });
 
@@ -149,6 +181,7 @@
         keySettings.style.opacity = '0';
         keySettings.style.marginLeft = '0';
         keySettings.style.width = '0';
+        keySettings.style.pointerEvents = 'none';
 
         if (selectedKey !== undefined) {
             getElement(selectedKey).style.borderColor = '';
@@ -171,6 +204,7 @@
             setSelectedKey(selectedKey, i);
         });
     }
+
 
     getElement('save-button').addEventListener('click', () => {
         // Get key or text mode
@@ -237,13 +271,8 @@
 
         }
 
+        getElement(`key-slot-${selectedKeySlot}`).style.borderColor = '';
         getElement(`key-slot-${slotNum}`).style.borderColor = 'var(--accent-color)';
-
-        // Reset old borders
-        if (selectedKeySlot !== undefined) {
-            getElement(`key-slot-${selectedKeySlot}`).style.borderColor = '';
-        }
-
         selectedKeySlot = slotNum;
         getElement(rowCol).style.borderColor = 'var(--accent-color)';
     }
@@ -275,12 +304,13 @@
         for (const rowCol of [...KEYS, ...HEADERS]) {
             getElement(rowCol).addEventListener('click', () => {
                 if (inLinkedMode) {
-                    sendToProcess('button-press', rowCol[0], rowCol[1])
-                    return
+                    sendToProcess('button-press', rowCol[0], rowCol[1]);
+                    return;
                 }
                 keySettings.style.opacity = '1';
                 keySettings.style.marginLeft = '50px';
                 keySettings.style.width = '255px';
+                keySettings.style.pointerEvents = 'all';
 
                 setSelectedKey(rowCol, 0);
             });

@@ -1,8 +1,7 @@
-import * as path from "path";
-import { MongoClient } from "mongodb";
 import { KeystrokeHandler } from "./KeystrokeHandler";
 import { ColorHandler, RGB } from "./ColorHandler";
 import { SerialHandler } from "./SerialHandler";
+import { DatabaseHandler } from "./DatabaseHandler";
 
 
 
@@ -12,53 +11,58 @@ import { SerialHandler } from "./SerialHandler";
 
 export class LinkedPadProcess {
 
-    private static readonly MODULE_NAME: string = "Linked Pad";
-    private static readonly MODULE_ID: string = "aarontburn.Linked_Pad";
-    private static readonly HTML_PATH: string = path.join(__dirname, "./LinkedPadHTML.html");
-
-
-    private KEYS: string[] = ["A", "B", "C", "D"]
+    private readonly KEYS: string[] = ["A", "B", "C", "D"]
         .flatMap(row => ["0", "1", "2", "3"]
             .map(col => row + col));
 
-    private HEADERS: string[] = ["H0", "H1", "H2", "H3"];
+    private readonly HEADERS: string[] = ["H0", "H1", "H2", "H3"];
 
+    private localState: { [rowCol: string]: RGB } = (() => {
+        const obj: { [rowCol: string]: RGB } = {};
+        for (const rowCol of this.KEYS) {
+            obj[rowCol] = [0, 0, 0];
+        }
+        return obj;
+    })();
 
-
-    private ACCESS_ID = ':3';
-    private URI = "mongodb+srv://admin:j2MzVYcewmPjnzrG@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad";
-
-    private client = new MongoClient(this.URI);
-    private database = this.client.db("pad_data");
-    private collection = this.database.collection("data");
-
-
-    private localState: any = {};
     private inLinkedMode: boolean = false;
 
 
-    private ready: boolean = false;
-    private sendToRenderer: (...args: any[]) => void = undefined
+    // 0.01, 0.1, 0.2, ..., 0.9, 1
+    private brightnessSteps: number[] = [0.01, ...Array.from({ length: 10 }, (_, i) => (i + 1) / 10)];
+    private brightness: number = this.brightnessSteps[0];
+    private brightnessIndex: number = 0;
 
+
+
+
+    private readonly sendToRenderer: (...args: any[]) => void;
 
     public constructor(sendToRenderer: (...args: any[]) => void) {
         this.sendToRenderer = sendToRenderer;
-
     }
 
     public initialize(): void {
-        SerialHandler.init(this.onPress.bind(this));
+        SerialHandler.init(
+            this.onPress.bind(this),
+            (() => {
+                this.sendToRenderer('connection-status', 1) // 1 means connecting
+            }).bind(this),
+            (() => {
+                this.sendToRenderer('connection-status', 2) // 2 means connected
+            }).bind(this)
+        );
+
 
         KeystrokeHandler.init();
+        DatabaseHandler.initDatabase(this.recalibrate.bind(this), this.setLight.bind(this));
 
+
+        this.setBrightness(this.brightnessSteps[0])
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
         this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
-
-        this.initDatabase();
-
-
-
+        this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
     }
 
     public onExit(): void {
@@ -66,124 +70,35 @@ export class LinkedPadProcess {
     }
 
 
-    private async initDatabase() {
-        console.log("Initializing...");
-
-        this.checkDatabase().then(() => {
-            this.collection.findOne({}).then(async data => {
-                this.ready = true;
-                await this.recalibrate();
-                this.listen().catch(this.initDatabase); // Reboot if error
-            });
-        });
-    }
-
-    private async checkDatabase() {
-        if (await this.collection.estimatedDocumentCount() === 1) {
-            const entry = await this.getObject();
-
-            if (entry !== null) {
-                if (Object.keys(entry).sort().toString() === [...this.KEYS, '_id', 'accessID'].sort().toString()) { // All keys are valid
-                    console.log("Database is properly initialized.");
-                    return;
-                }
-            }
-        }
-
-        console.log("WARNING: Database needs to be re-setup.");
-        await this.collection.deleteMany({});
-        await this.reset();
-    }
-
-    /**
-     *  Listens to any database changes.
-     */
-    private async listen(): Promise<void> {
-        try {
-            const changeStream: any = this.collection.watch();
-            console.log("Listening for changes...");
-
-            // Print change events as they occur
-            for await (const change of changeStream) {
-                if (change && change.updateDescription && change.updateDescription.updatedFields) {
-                    this.onDatabaseChange(change.updateDescription.updatedFields);
-                }
-            }
-            await changeStream.close();
-
-        } finally {
-            await this.client.close();
-        }
-    }
-
-
-    /**
-     *  An event that triggers when the database object is modified.
-     *  @param changeObject     An object containing all keys and new states for each button.
-     */
-    private async onDatabaseChange(changeObject: { [rowCol: string]: RGB }) {
-        for (const rowCol in changeObject) {
-            if (!this.KEYS.includes(rowCol)) { // Maybe not needed?
-                continue;
-            }
-
-            const row: string = rowCol[0];
-            const col: string = rowCol[1];
-            const newValue: RGB = changeObject[rowCol];
-
-            this.setLight(row, col, newValue);
-        }
-    }
-
-    /**
-     *  Reset all buttons to 0
-     */
-    private async reset() {
-        // Iterate over A0, A1, ... D3, D4 and reset their entries to 0
-        const object: any = {};
-        for (const key of this.KEYS) {
-            object[key] = ColorHandler.OFF;
-        }
-        object['accessID'] = this.ACCESS_ID;
-        const result = await this.collection.findOneAndUpdate(
-            { 'accessID': this.ACCESS_ID },
-            { '$set': object }, { returnDocument: 'after', upsert: true });
-
-        for (const key in result) {
-            this.setLight(key[0], key[1], 0);
-        }
-    }
-
-    private async getObject() {
-        return await this.collection.findOne({ 'accessID': this.ACCESS_ID });
-    }
-
-    private async setLight(row: string, col: string, isOn: any) {
-        this.localState[row + col] = isOn;
+    private async setLight(row: string, col: string, rgb: RGB, writeState: boolean = true) {
+        this.localState[row + col] = rgb;
         // this.displayStateToConsole();
+        SerialHandler.write(`change ${row + col} ${JSON.stringify(rgb)}`)
+
+
         this.sendToRenderer('light-change', this.localState)
     }
+
 
     /**
      *  Recalibrates all lights to the state reflected in the database.
      */
     private async recalibrate() {
-        const currentState = await this.getObject();
+        const currentState = await DatabaseHandler.getObject();
 
         for (const key of this.KEYS) {
-            this.setLight(key[0], key[1], currentState[key]);
+            this.setLight(key[0], key[1], currentState[key], false);
         }
     }
 
     private handleLinkedHeaders(col: string): void {
         switch (col) {
-            case '0': {
-                ColorHandler.nextColor()
-                console.log("New color: " + JSON.stringify(ColorHandler.getCurrentColor()))
+            case '0': {     //  Color
+                this.setColor(ColorHandler.getNextColor())
                 break;
             }
-            case '1': {
-
+            case '1': {     //  Brightness
+                this.setBrightness();
                 break;
             }
             case '2': {
@@ -204,26 +119,11 @@ export class LinkedPadProcess {
 
     private async onPress(row: string, col: string): Promise<void> {
         if (this.inLinkedMode) {
-            if (!this.ready) {
-                return;
-            }
             if (row === 'H') {
                 this.handleLinkedHeaders(col);
                 return;
             }
-            try {
-                const isOff: boolean = ColorHandler.isEqual(this.localState[row + col], ColorHandler.OFF)
-
-                await this.collection.findOneAndUpdate(
-                    { 'accessID': this.ACCESS_ID },
-                    { "$set": { [row + col]: isOff ? ColorHandler.getCurrentColor() : ColorHandler.OFF } }
-                )
-            } catch (e) {
-                console.log("DB no longer connected. Reinitializing...");
-
-                this.initDatabase()
-            }
-
+            DatabaseHandler.onKeyPress(row, col, this.localState);
             return;
         }
         // Macro mode
@@ -252,6 +152,43 @@ export class LinkedPadProcess {
         console.log(s);
     }
 
+    private setColor(rgb: RGB): void {
+        ColorHandler.setColor(rgb);
+        SerialHandler.write(`rgb [${ColorHandler.getCurrentColor()}]`)
+        this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
+    }
+
+    private setBrightness(newBrightness?: number): void {
+        if (newBrightness !== undefined) { // brightness is supplied by slider
+            for (let i = 0; i < this.brightnessSteps.length - 1; i++) {
+                if (this.brightness > this.brightnessSteps[i] && this.brightness < this.brightnessSteps[i + 1]) {
+                    this.brightnessIndex = i;
+                    break;
+                }
+            }
+            this.brightness = newBrightness;
+
+        } else { // Go to next step
+            if (!this.brightnessSteps.includes(this.brightness)) { // Current brightness isn't on a step
+                // Go to next step
+                for (let i = 0; i < this.brightnessSteps.length - 1; i++) {
+                    if (this.brightness > this.brightnessSteps[i] && this.brightness < this.brightnessSteps[i + 1]) {
+                        this.brightnessIndex = i + 1;
+                        break;
+                    }
+                }
+            } else {
+                this.brightnessIndex++;
+                if (this.brightnessIndex > this.brightnessSteps.length - 1) {
+                    this.brightnessIndex = 0;
+                }
+            }
+            this.brightness = this.brightnessSteps[this.brightnessIndex];
+        }
+        SerialHandler.write(`brightness ${this.brightness}`);
+        this.sendToRenderer('brightness-changed', this.brightness);
+    }
+
 
 
     public async handleEvent(eventType: string, ...data: any[]): Promise<any> {
@@ -267,15 +204,11 @@ export class LinkedPadProcess {
                 this.onPress(row, col);
                 break;
             }
-            case 'reset': {
-                this.reset()
-                break;
-            }
+
             case 'set-key': {
                 const rowCol: string = data[0];
                 const keyInfo: string | string[] = data[1];
 
-                console.log(`${rowCol} (mode: ${typeof keyInfo === 'string' ? 'TEXT' : 'KEYS'}) ${keyInfo}`);
                 KeystrokeHandler.setKey(rowCol, keyInfo);
                 this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
                 break;
@@ -286,13 +219,12 @@ export class LinkedPadProcess {
             }
             case 'brightness-modified': {
                 const brightnessPercentage: number = (data[0] as number) / 100;
-                console.log(brightnessPercentage)
+                this.setBrightness(brightnessPercentage);
                 break;
             }
             case 'selected-color-changed': {
-                const hex: string = data[0];
-                ColorHandler.setColor(ColorHandler.hexToRGB(hex))
-                break;
+                this.setColor(ColorHandler.hexToRGB(data[0]));
+                break
             }
         }
     }

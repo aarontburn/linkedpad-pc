@@ -21,12 +21,17 @@
         <div id="header" style="border-bottom: 1px solid gray;">
             <div
                 style="text-align: center; position: absolute; left: 15px; top: 8px; display: flex; align-items: center;">
+
                 <label class="switch">
                     <input type="checkbox" id="linked-mode-slider">
                     <span class="slider round"></span>
                 </label>
 
                 <p style="margin-left: 10px;">Linked Mode</p>
+            </div>
+
+            <div style="position: absolute; right: 15px; top: 8px; display: flex; align-items: center;">
+                <p style="margin-left: 25px;">Status: <span id="status">Connected</span></p>
 
             </div>
 
@@ -46,7 +51,7 @@
                         <div id="color-list">
       
                         </div>
-                        <p style="font-size: 25px; margin-top: 15px;" id="brightness-label">Brightness (50%)</p>
+                        <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">Brightness (50%)</p>
                         <input type="range" min="1" max="100" style="width: 200px;" id="brightness-slider">
 
                     </div>

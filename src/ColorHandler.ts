@@ -29,9 +29,9 @@ export class ColorHandler {
     }
 
 
-    public static nextColor(): void {
+    public static getNextColor(): RGB {
         const i: number = this.currentColorIndex;
-        this.setColor(this.COLOR_SEQ[((i + 1) > this.COLOR_SEQ.length - 1) ? 0 : i + 1])
+        return this.COLOR_SEQ[((i + 1) > this.COLOR_SEQ.length - 1) ? 0 : i + 1]
     }
 
 
