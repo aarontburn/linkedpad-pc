@@ -8,11 +8,13 @@
 
     <script defer src="../staticRenderer.js"></script>
     <script defer src="../renderer.js"></script>
+    <script defer src="../settingsRenderer.js"></script>
 
 
     <link rel="stylesheet" href="./colors.css">
     <link rel="stylesheet" href="./LinkedPadStyles.css">
     <link rel="stylesheet" href="./external.css">
+    <link rel="stylesheet" href="./settings.css">
 
 </head>
 
@@ -31,7 +33,7 @@
             </div>
 
             <div style="position: absolute; right: 15px; top: 8px; display: flex; align-items: center;">
-                <p style="margin-left: 25px;">Status: <span id="status">Connected</span></p>
+                <p style="margin-left: 25px;">Status: <span id="status" style="color: red;">Disconnected</span></p>
 
             </div>
 
@@ -124,8 +126,26 @@
     
             </div>
         </div>
+
+
         <div class="container" id="settings-tab" style="display: none;">
-    
+            <div style="margin: 5px; display: flex;">
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Standalone WiFi Setup</p>
+
+                    <div>
+                        <p>WiFi SSID (Name)</p>
+                        <input id="wifi-ssid" type="text">
+                    </div>
+
+                    <div>
+                        <p>WiFi Password</p>
+                        <input id='wifi-password' type="password">
+                    </div>
+
+                    <p id="send-wifi" class="save-button">Send</p>
+                </div>
+            </div>
         </div>
     </div>
 

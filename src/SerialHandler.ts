@@ -8,24 +8,67 @@ export class SerialHandler {
 
     private static readonly PORT: string = 'COM3';
     private static readonly BAUD: number = 9600;
+    private static readonly SERIAL_NUMBER: string = '6&3AF0F9CE&0&14';
 
 
     private static ser: SerialPort;
     private static parser: InterByteTimeoutParser;
 
+    private static currentlyConnected: boolean = false;
+    private static softwareConnected: boolean = false;
+    private static attemptingToConnect: boolean = false;
+
+
     public static init(
         onClickCallback: (row: string, col: string) => void,
-        onPortOpenedCallback: () => void,
-        onConnectionSuccessCallback: () => void
+        connectionStatusCallback: (status: 0 | 1 | 2) => void,
     ): void {
 
-        this.establishSerial().then(() => {
-            onPortOpenedCallback()
-            this.attemptConnection().then(() => {
-                onConnectionSuccessCallback();
-                this.listen(onClickCallback);
-            });
+
+
+
+        this.monitorPhysicalConnection((nowConnected: boolean) => {
+            if (!SerialHandler.currentlyConnected && !nowConnected) { // Not connected before,still not connected now
+                // Do nothing, keep waiting for connection
+                SerialHandler.softwareConnected = false;
+                SerialHandler.attemptingToConnect = false;
+                connectionStatusCallback(0);
+
+
+            } else if (!SerialHandler.currentlyConnected && nowConnected) { // Not connected before, connected now
+                connectionStatusCallback(SerialHandler.softwareConnected ? 2 : 1);
+                // this.stop() // Remove old version
+
+                if (!SerialHandler.attemptingToConnect || !SerialHandler.softwareConnected) {
+                    this.establishSerial().then((serialConnected) => {
+                        SerialHandler.attemptingToConnect = serialConnected;
+                        if (serialConnected) {
+                            this.attemptConnection().then(() => {
+                                SerialHandler.attemptingToConnect = false;
+                                SerialHandler.softwareConnected = true;
+                                connectionStatusCallback(2);
+                                this.listen(onClickCallback);
+                            })
+                        }
+                    });
+                }
+
+
+
+            } else if (SerialHandler.currentlyConnected && nowConnected) { // Connected before, connected now
+                connectionStatusCallback(SerialHandler.softwareConnected ? 2 : 1);
+
+                // Do nothing, maintain connection
+            } else if (SerialHandler.currentlyConnected && !nowConnected) { // Connected before, not connected now
+                SerialHandler.softwareConnected = false;
+                SerialHandler.attemptingToConnect = false;
+                connectionStatusCallback(0);
+
+                this.stop()
+            }
+            SerialHandler.currentlyConnected = nowConnected;
         });
+
     }
 
     public static stop(): void {
@@ -37,24 +80,31 @@ export class SerialHandler {
                     console.log("Error closing serial port.")
                     console.log(err)
                 }
-
             }
         });
     }
 
 
+    public static async monitorPhysicalConnection(
+        isConnectedCallback: (connected: boolean) => void
+    ) {
+        setInterval(async () => {
+            let ports: any[] = await SerialPort.list();
+            const scannerPort = ports.filter(
+                (port: any) => port.path === this.PORT
+            );
+
+            isConnectedCallback(scannerPort.length !== 0);
+        }, 1000);
+    }
+
+
     private static async establishSerial(): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            if (this.ser !== undefined) {
-                this.ser.close();
-                this.ser = undefined;
-            }
-
             this.ser = new SerialPort({
                 path: this.PORT,
                 baudRate: this.BAUD,
             },
-
                 (err) => {
                     if (err) {
                         console.log("Error opening serial port.");
@@ -63,12 +113,14 @@ export class SerialHandler {
                         } else {
                             console.log('\t' + err);
                         }
-                        return;
+                        resolve(false)
                     }
                     this.parser = this.ser.pipe(new InterByteTimeoutParser({ interval: 250 }));
                     console.log(`Established serial connection on ${this.PORT}`);
+
                     resolve(true);
-                });
+                }
+            );
         });
 
     }
@@ -77,14 +129,16 @@ export class SerialHandler {
     public static async attemptConnection(): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
             console.log(`Listening for 'pi_ready' from linkedpad...`);
-            this.parser.on('data', d => {
+            const f = (d: any) => {
                 const data: string = (d.toString() as string).trim();
                 if (data === 'pi_ready') {
                     console.log("Connection formed with Pi.");
-                    this.write('pc_ready');
+                    this.write('pc_ready', false);
+                    this.parser.removeListener('data', f)
                     resolve(true); // Resolves when a connection has been made
                 }
-            });
+            }
+            this.parser.on('data', f);
         });
     }
 
@@ -94,17 +148,24 @@ export class SerialHandler {
             const data: string = (d.toString() as string).trim();
 
             if (data === 'pi_ready') {
-                console.log("Reconnected with linked pad.");
-                this.write('pc_ready');
+                this.softwareConnected = true;
+                this.write('pc_ready', false);
                 return;
+            }
+
+            if (data === 'pi_exit') {
+                console.log("Linked Pad exiting");
+                this.softwareConnected = false;
+                return
+
             }
 
             const rowCol: [string, string] = SerialHandler.parseToRowCol(data);
             if (rowCol) {
-                onClickCallback(rowCol[0], rowCol[1])
+                onClickCallback(rowCol[0], rowCol[1]);
             }
         });
-        console.log("Listening to serial...")
+        console.log("Listening to serial...");
     }
 
     private static parseToRowCol(s: string): [string, string] | undefined {
@@ -122,14 +183,16 @@ export class SerialHandler {
         return [data[0], data[1]];
     }
 
-    public static write(data: string): void {
-        this.ser.write(data + "\n", (err) => {
+    public static write(data: string, log: boolean = false): void {
+        this.ser?.write(data + "\n", (err) => {
             if (err) {
                 console.log(`Error writing "${data}"`);
                 console.log(err);
                 return;
             }
-            console.log(`Writing '${data}' to serial...`);
+            if (log) {
+                console.log(`Writing '${data}' to serial...`);
+            }
         });
     }
 

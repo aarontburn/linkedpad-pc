@@ -43,13 +43,11 @@ export class LinkedPadProcess {
     }
 
     public initialize(): void {
+
         SerialHandler.init(
             this.onPress.bind(this),
-            (() => {
-                this.sendToRenderer('connection-status', 1) // 1 means connecting
-            }).bind(this),
-            (() => {
-                this.sendToRenderer('connection-status', 2) // 2 means connected
+            ((status: 0 | 1 | 2) => {
+                this.sendToRenderer('connection-status', status)
             }).bind(this)
         );
 
@@ -58,7 +56,7 @@ export class LinkedPadProcess {
         DatabaseHandler.initDatabase(this.recalibrate.bind(this), this.setLight.bind(this));
 
 
-        this.setBrightness(this.brightnessSteps[0])
+        this.setBrightness(this.brightnessSteps[0]);
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
         this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
@@ -154,7 +152,7 @@ export class LinkedPadProcess {
 
     private setColor(rgb: RGB): void {
         ColorHandler.setColor(rgb);
-        SerialHandler.write(`rgb [${ColorHandler.getCurrentColor()}]`)
+        SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`)
         this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
     }
 
@@ -215,6 +213,7 @@ export class LinkedPadProcess {
             }
             case 'linked-mode': {
                 this.inLinkedMode = data[0];
+                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
                 break;
             }
             case 'brightness-modified': {
@@ -225,6 +224,13 @@ export class LinkedPadProcess {
             case 'selected-color-changed': {
                 this.setColor(ColorHandler.hexToRGB(data[0]));
                 break
+            }
+            case 'send-wifi': {
+                const ssid: string = data[0];
+                const password: string = data[1];
+
+                SerialHandler.write(`wifi-setup ${ssid} ${password}`);
+                break;
             }
         }
     }

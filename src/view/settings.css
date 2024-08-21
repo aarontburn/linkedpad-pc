@@ -1,0 +1,22 @@
+.setting-group {
+    border: 1px solid white;
+    padding: 15px;
+    border-radius: 5px;
+    width: fit-content;
+}
+
+.save-button {
+    border: 1px solid gray;
+    color: gray;
+    width: fit-content;
+    transition: 0.25s;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.save-button:hover {
+    border-color: white;
+    color: white;
+}

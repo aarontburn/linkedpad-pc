@@ -61,6 +61,8 @@
         return obj;
     })();
     let inLinkedMode: boolean = false;
+    let selectedColor: RGB = [255, 255, 255];
+
 
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
@@ -86,44 +88,11 @@
                 keyMap = data[0];
                 break;
             }
-            case 'color-options': {
-                const colors: RGB[] = data[0];
-
-                for (const rgb of colors) {
-                    const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
-                    getElement('color-list').insertAdjacentHTML('beforeend', `
-                        <div 
-                            class='color'  
-                            style='background-color: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]});'
-                            id='color-${hex}'
-                            >
-                        </div>
-                        `
-                    )
-
-                    const element: HTMLElement = getElement(`color-${hex}`);
-                    element.addEventListener('click', () => {
-                        sendToProcess('selected-color-changed', hex);
-                    });
-
-                }
-                break;
-            }
             case 'selected-color': {
                 setSelectedColor(data[0])
                 break;
             }
-            case 'brightness-changed': {
-                const brightness: number = data[0];
-                const percent: number = Math.round(brightness * 100)
-                getElement('brightness-label').innerHTML = `Brightness (${percent}%)`;
-                (getElement('brightness-slider') as HTMLInputElement).value = `${percent}`;
-                break;
-            }
-            case 'connection-status': {
-                const status: number = data[0];
-                console.log(status)
-            }
+
 
         }
     });
@@ -138,6 +107,11 @@
         const newColor: HTMLElement = getElement(`color-${hex}`);
         newColor.style.outline = 'white solid';
         prevSelectedColor = newColor;
+        selectedColor = rgb
+
+        if (inLinkedMode) {
+            getElement('H0').style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        }
     }
 
 
@@ -161,20 +135,22 @@
                 : 'transparent'
         }
 
+        getElement('H0').style.backgroundColor =
+            inLinkedMode
+                ? `rgb(${selectedColor[0]}, ${selectedColor[1]}, ${selectedColor[2]})`
+                : `transparent`;
+
 
         Array.from(document.getElementsByClassName('linked-settings')).forEach((element: HTMLElement) => {
             element.style.opacity = inLinkedMode ? '1' : '0';
             element.style.width = inLinkedMode ? '30%' : '0';
             element.style.margin = inLinkedMode ? '0 15px' : '0 0';
             element.style.pointerEvents = inLinkedMode ? 'all' : 'none';
-        
+
         });
     });
 
-    const brightnessSlider: HTMLInputElement = getElement('brightness-slider') as HTMLInputElement;
-    brightnessSlider.addEventListener('input', () => {
-        sendToProcess('brightness-modified', brightnessSlider.value);
-    });
+
 
     const keySettings: HTMLElement = getElement('key-settings');
     getElement('close-key-settings').addEventListener('click', () => {
@@ -187,14 +163,6 @@
             getElement(selectedKey).style.borderColor = '';
         }
         selectedKey = undefined;
-    });
-
-    const toggle: HTMLElement = getElement('keys-text-toggle');
-    const textToggle: HTMLElement = getElement('text-toggle')
-    const keyToggle: HTMLElement = getElement('key-toggle')
-    toggle.addEventListener('change', () => {
-        textToggle.style.display = !(toggle as HTMLInputElement).checked ? 'none' : 'inline-block';
-        keyToggle.style.display = (toggle as HTMLInputElement).checked ? 'none' : 'flex';
     });
 
 
