@@ -74,7 +74,9 @@
                     localState[rowCol] = rgb;
 
                     if (inLinkedMode) {
-                        getElement(rowCol).style.backgroundColor = isRGBEqual(rgb, [0, 0, 0]) ? 'transparent' : `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                        getElement(rowCol).style.backgroundColor = isRGBEqual(rgb, [0, 0, 0])
+                            ? 'transparent'
+                            : `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
                     }
                 }
 
@@ -89,7 +91,7 @@
                 break;
             }
             case 'selected-color': {
-                setSelectedColor(data[0])
+                setSelectedColor(data[0]);
                 break;
             }
 
@@ -107,7 +109,7 @@
         const newColor: HTMLElement = getElement(`color-${hex}`);
         newColor.style.outline = 'white solid';
         prevSelectedColor = newColor;
-        selectedColor = rgb
+        selectedColor = rgb;
 
         if (inLinkedMode) {
             getElement('H0').style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
@@ -132,7 +134,7 @@
             const rgb: RGB = localState[rowCol];
             getElement(rowCol).style.backgroundColor = inLinkedMode && !isRGBEqual(rgb, [0, 0, 0])
                 ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
-                : 'transparent'
+                : 'transparent';
         }
 
         getElement('H0').style.backgroundColor =
@@ -146,7 +148,6 @@
             element.style.width = inLinkedMode ? '30%' : '0';
             element.style.margin = inLinkedMode ? '0 15px' : '0 0';
             element.style.pointerEvents = inLinkedMode ? 'all' : 'none';
-
         });
     });
 

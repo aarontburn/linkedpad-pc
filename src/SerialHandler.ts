@@ -20,24 +20,21 @@ export class SerialHandler {
 
 
     public static init(
-        onClickCallback: (row: string, col: string) => void,
-        connectionStatusCallback: (status: 0 | 1 | 2) => void,
+        serialEventHandler: (eventString: string) => void,
+        connectionStatusCallback: (prevState: 0 | 1 | 2, status: 0 | 1 | 2) => void,
     ): void {
-
-
-
-
+        let prevState: 0 | 1 | 2 = 0;
         this.monitorPhysicalConnection((nowConnected: boolean) => {
+            let sentState: 0 | 1 | 2 = 0;
             if (!SerialHandler.currentlyConnected && !nowConnected) { // Not connected before,still not connected now
                 // Do nothing, keep waiting for connection
                 SerialHandler.softwareConnected = false;
                 SerialHandler.attemptingToConnect = false;
-                connectionStatusCallback(0);
+                sentState = 0;
 
 
             } else if (!SerialHandler.currentlyConnected && nowConnected) { // Not connected before, connected now
-                connectionStatusCallback(SerialHandler.softwareConnected ? 2 : 1);
-                // this.stop() // Remove old version
+                sentState = SerialHandler.softwareConnected ? 2 : 1;
 
                 if (!SerialHandler.attemptingToConnect || !SerialHandler.softwareConnected) {
                     this.establishSerial().then((serialConnected) => {
@@ -46,8 +43,8 @@ export class SerialHandler {
                             this.attemptConnection().then(() => {
                                 SerialHandler.attemptingToConnect = false;
                                 SerialHandler.softwareConnected = true;
-                                connectionStatusCallback(2);
-                                this.listen(onClickCallback);
+                                sentState = 2;
+                                this.listen(serialEventHandler);
                             })
                         }
                     });
@@ -56,16 +53,18 @@ export class SerialHandler {
 
 
             } else if (SerialHandler.currentlyConnected && nowConnected) { // Connected before, connected now
-                connectionStatusCallback(SerialHandler.softwareConnected ? 2 : 1);
+                sentState = SerialHandler.softwareConnected ? 2 : 1;
+
 
                 // Do nothing, maintain connection
             } else if (SerialHandler.currentlyConnected && !nowConnected) { // Connected before, not connected now
                 SerialHandler.softwareConnected = false;
                 SerialHandler.attemptingToConnect = false;
-                connectionStatusCallback(0);
-
+                sentState = 0;
                 this.stop()
             }
+            connectionStatusCallback(prevState, sentState);
+            prevState = sentState;
             SerialHandler.currentlyConnected = nowConnected;
         });
 
@@ -130,12 +129,15 @@ export class SerialHandler {
         return new Promise(async (resolve, reject) => {
             console.log(`Listening for 'pi_ready' from linkedpad...`);
             const f = (d: any) => {
-                const data: string = (d.toString() as string).trim();
-                if (data === 'pi_ready') {
-                    console.log("Connection formed with Pi.");
-                    this.write('pc_ready', false);
-                    this.parser.removeListener('data', f)
-                    resolve(true); // Resolves when a connection has been made
+                const data: string[] = (d.toString() as string).trim().split("\n");
+
+                for (const line of data) {
+                    if (line === 'pi_ready') {
+                        console.log("Connection formed with Pi.");
+                        this.write('pc_ready', false);
+                        this.parser.removeListener('data', f)
+                        resolve(true); // Resolves when a connection has been made
+                    }
                 }
             }
             this.parser.on('data', f);
@@ -143,45 +145,37 @@ export class SerialHandler {
     }
 
 
-    public static listen(onClickCallback: (row: string, col: string) => void): void {
+    public static listen(serialHandler: (eventString: string) => void): void {
         this.parser.on('data', d => {
-            const data: string = (d.toString() as string).trim();
+            const data: string[] = (d.toString() as string).trim().split("\n");
 
-            if (data === 'pi_ready') {
-                this.softwareConnected = true;
-                this.write('pc_ready', false);
-                return;
+            for (const line of data) {
+                switch (line) {
+                    case 'pi_ready': {
+                        this.softwareConnected = true;
+                        this.write('pc_ready', false);
+                        break;
+                    }
+                    case 'pi_exit': {
+                        console.log("Linked Pad exiting");
+                        this.softwareConnected = false;
+                        break;
+                    }
+                    default: {
+                        serialHandler(line);
+                        break;
+                    }
+                }
+
+
             }
 
-            if (data === 'pi_exit') {
-                console.log("Linked Pad exiting");
-                this.softwareConnected = false;
-                return
 
-            }
-
-            const rowCol: [string, string] = SerialHandler.parseToRowCol(data);
-            if (rowCol) {
-                onClickCallback(rowCol[0], rowCol[1]);
-            }
         });
         console.log("Listening to serial...");
     }
 
-    private static parseToRowCol(s: string): [string, string] | undefined {
-        const data: string = (s.toString() as string).trim();
 
-        console.log("Serial (RAW):");
-        console.log(s);
-
-
-        if (data.length !== 2) {
-            return undefined;
-            // Maybe add more checks here?
-        }
-
-        return [data[0], data[1]];
-    }
 
     public static write(data: string, log: boolean = false): void {
         this.ser?.write(data + "\n", (err) => {

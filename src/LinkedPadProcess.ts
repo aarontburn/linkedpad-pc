@@ -34,8 +34,6 @@ export class LinkedPadProcess {
     private brightnessIndex: number = 0;
 
 
-
-
     private readonly sendToRenderer: (...args: any[]) => void;
 
     public constructor(sendToRenderer: (...args: any[]) => void) {
@@ -43,11 +41,20 @@ export class LinkedPadProcess {
     }
 
     public initialize(): void {
-
         SerialHandler.init(
-            this.onPress.bind(this),
-            ((status: 0 | 1 | 2) => {
-                this.sendToRenderer('connection-status', status)
+            this.handleSerialEvents.bind(this),
+            ((prevStatus: 0 | 1 | 2, status: 0 | 1 | 2) => {
+                this.sendToRenderer('connection-status', status);
+
+                if (prevStatus !== 2 && status === 2) { // Send data over
+                    SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
+                    SerialHandler.write(`brightness ${this.brightness}`);
+
+                    for (const rowCol in this.localState) {
+                        SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
+                    }
+                    SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
+                }
             }).bind(this)
         );
 
@@ -67,8 +74,70 @@ export class LinkedPadProcess {
         SerialHandler.stop()
     }
 
+    private handleSerialEvents(eventString: string): void {
+        const split: string[] = eventString.split(" ");
 
-    private async setLight(row: string, col: string, rgb: RGB, writeState: boolean = true) {
+        switch (split[0]) {
+            case 'wifi': {
+                const status: string = split[1];
+
+                switch (status) {
+                    case 'start': {
+                        this.sendToRenderer('wifi-change', 0);
+                        console.log("Attempting to connect to WiFi...");
+                        break;
+                    }
+                    case 'end': {
+                        console.log("WiFi connection finished. Attempting to connect to the internet...");
+                        break;
+                    }
+                    case 'connected': {
+                        this.sendToRenderer('wifi-change', 1);
+                        console.log("WiFi connection successful");
+                        break;
+                    }
+                    case 'disconnected': {
+                        this.sendToRenderer('wifi-change', -1);
+                        console.log("WiFi connection unsuccessful. Double check the password.");
+                        break;
+                    }
+                }
+                break
+            }
+
+            case 'temp': {
+                const temp: string = split[1];
+                console.log("Current temperature: " + temp);
+                break;
+            }
+
+            default: {
+                const parseToRowCol = (s: string): [string, string] | undefined => {
+                    const data: string = (s.toString() as string).trim();
+            
+                    console.log("Serial (RAW):");
+                    console.log(s);
+            
+                    if (data.length !== 2) {
+                        return undefined;
+                    }
+            
+                    return [data[0], data[1]];
+                }
+
+                const rowCol: [string, string] = parseToRowCol(eventString);
+                if (rowCol) {
+                    this.onPress(rowCol[0], rowCol[1]);
+                }
+                break;
+            }
+        }
+
+
+    }
+
+
+    private async setLight(row: string, col: string, rgb: RGB) {
         this.localState[row + col] = rgb;
         // this.displayStateToConsole();
         SerialHandler.write(`change ${row + col} ${JSON.stringify(rgb)}`)
@@ -85,7 +154,7 @@ export class LinkedPadProcess {
         const currentState = await DatabaseHandler.getObject();
 
         for (const key of this.KEYS) {
-            this.setLight(key[0], key[1], currentState[key], false);
+            this.setLight(key[0], key[1], currentState[key]);
         }
     }
 

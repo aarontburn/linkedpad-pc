@@ -1,6 +1,7 @@
 import { BrowserWindow, IpcMain } from "electron";
 import * as path from "path";
 import { LinkedPadProcess } from "./LinkedPadProcess";
+import { Settings } from "./Settings";
 
 
 const WINDOW_DIMENSION: { width: number, height: number } = { width: 1920, height: 1080 };
@@ -20,6 +21,8 @@ export class Process {
     }
 
     public start(): void {
+        Settings.init();
+
         this.createBrowserWindow();
         this.handleMainEvents()
 

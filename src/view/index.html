@@ -45,15 +45,17 @@
 
         <div class="container" id="pad-tab">
             <div class="row">
-                <div class="row-content" style="display: flex; justify-content: center; width: 100%; align-items: center;">
+                <div class="row-content"
+                    style="display: flex; justify-content: center; width: 100%; align-items: center;">
 
                     <div class="linked-settings">
                         <p style="font-size: 25px;">Colors</p>
 
                         <div id="color-list">
-      
+
                         </div>
-                        <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">Brightness (50%)</p>
+                        <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">
+                            Brightness (50%)</p>
                         <input type="range" min="1" max="100" style="width: 200px;" id="brightness-slider">
 
                     </div>
@@ -66,14 +68,14 @@
                             <!-- Main buttons go here -->
                         </tbody>
                     </table>
-    
+
                     <div id="key-settings">
                         <div style="display: flex; align-items: center;">
                             <h1 id="selected-key-label">A0</h1>
                             <div style="margin-right: auto;"></div>
                             <p id="close-key-settings">X</p>
                         </div>
-    
+
                         <div style="display: flex; margin-bottom: 10px;">
                             <p>Keys</p>
                             <label class="switch" style="margin: 0 15px;">
@@ -82,10 +84,10 @@
                             </label>
                             <p>Text</p>
                         </div>
-    
+
                         <input id="text-toggle" type="text" style="display: none;">
-    
-    
+
+
                         <div id="key-toggle" style="display: flex;">
                             <div class="key" style="margin-left: 0;" id="key-slot-0">
                                 <p>Ø</p>
@@ -100,7 +102,7 @@
                                 <p>Ø</p>
                             </div>
                         </div>
-    
+
                         <div style="display: flex; justify-content: end;">
                             <p id="save-button">Save</p>
                         </div>
@@ -108,22 +110,22 @@
                     <div class="linked-settings">
 
                     </div>
-    
-    
+
+
                 </div>
-    
+
             </div>
-    
-    
+
+
             <div class="row" id="key-list-row">
                 <div class="col" id="type-list">
                     <!-- Key groups go here -->
                 </div>
-    
+
                 <div class="row-content" id="keys">
                     <!-- Keys go here -->
                 </div>
-    
+
             </div>
         </div>
 
@@ -144,6 +146,7 @@
                     </div>
 
                     <p id="send-wifi" class="save-button">Send</p>
+                    <p>Current status: <span id="wifi-status">Connecting</span></p>
                 </div>
             </div>
         </div>

@@ -14,8 +14,32 @@
     }
 
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
+        console.log(eventType)
         switch (eventType) {
+            case 'wifi-change': {
+                const status: number = data[0];
+                const wifiStatus: HTMLElement = getElement('wifi-status');
 
+                switch (status) {
+                    case 0: {
+                        wifiStatus.innerHTML = 'Connecting...';
+                        wifiStatus.style.color = 'yellow';
+                        break
+                    }
+                    case -1: {
+                        wifiStatus.innerHTML = 'Disconnected';
+                        wifiStatus.style.color = 'red';
+                        break
+                    }
+                    case 1: {
+                        wifiStatus.innerHTML = 'Connected';
+                        wifiStatus.style.color = 'green';
+                        break
+                    }
+                }
+
+                break;
+            }
         }
     });
 
