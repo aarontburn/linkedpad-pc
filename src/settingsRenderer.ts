@@ -14,7 +14,6 @@
     }
 
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
-        console.log(eventType)
         switch (eventType) {
             case 'wifi-change': {
                 const status: number = data[0];

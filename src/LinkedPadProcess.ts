@@ -2,6 +2,7 @@ import { KeystrokeHandler } from "./KeystrokeHandler";
 import { ColorHandler, RGB } from "./ColorHandler";
 import { SerialHandler } from "./SerialHandler";
 import { DatabaseHandler } from "./DatabaseHandler";
+import { Setting, Settings } from "./Settings";
 
 
 
@@ -30,7 +31,7 @@ export class LinkedPadProcess {
 
     // 0.01, 0.1, 0.2, ..., 0.9, 1
     private brightnessSteps: number[] = [0.01, ...Array.from({ length: 10 }, (_, i) => (i + 1) / 10)];
-    private brightness: number = this.brightnessSteps[0];
+    private brightness: number;
     private brightnessIndex: number = 0;
 
 
@@ -41,6 +42,11 @@ export class LinkedPadProcess {
     }
 
     public initialize(): void {
+        this.brightness = Settings.getSettingValue('brightness');
+        ColorHandler.setColor(Settings.getSettingValue('selected_color'));
+        this.inLinkedMode = Settings.getSettingValue('in_linked_mode');
+
+        
         SerialHandler.init(
             this.handleSerialEvents.bind(this),
             ((prevStatus: 0 | 1 | 2, status: 0 | 1 | 2) => {
@@ -63,11 +69,12 @@ export class LinkedPadProcess {
         DatabaseHandler.initDatabase(this.recalibrate.bind(this), this.setLight.bind(this));
 
 
-        this.setBrightness(this.brightnessSteps[0]);
+        this.setBrightness(this.brightness);
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
         this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
         this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
+        this.sendToRenderer('linked-mode', this.inLinkedMode);
     }
 
     public onExit(): void {
@@ -221,6 +228,7 @@ export class LinkedPadProcess {
 
     private setColor(rgb: RGB): void {
         ColorHandler.setColor(rgb);
+        Settings.setSettingValue('selected_color', ColorHandler.rgbToHex(ColorHandler.getCurrentColor()))
         SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`)
         this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
     }
@@ -252,6 +260,7 @@ export class LinkedPadProcess {
             }
             this.brightness = this.brightnessSteps[this.brightnessIndex];
         }
+        Settings.setSettingValue('brightness', this.brightness)
         SerialHandler.write(`brightness ${this.brightness}`);
         this.sendToRenderer('brightness-changed', this.brightness);
     }
@@ -282,6 +291,7 @@ export class LinkedPadProcess {
             }
             case 'linked-mode': {
                 this.inLinkedMode = data[0];
+                Settings.setSettingValue('in_linked_mode', this.inLinkedMode)
                 SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
                 break;
             }

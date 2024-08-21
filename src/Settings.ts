@@ -47,7 +47,6 @@ export class Settings {
             for (const id in settingsObject) {
                 this.setSettingValue(id, settingsObject[id]);
             }
-
         }
 
         StorageHandler.writeToStorage(this.FILE, JSON.stringify(this.getSettingMap(), undefined, 4));

@@ -35,7 +35,11 @@ export class ColorHandler {
     }
 
 
-    public static setColor(rgb: RGB): void {
+    public static setColor(rgb: RGB | string): void {
+        if (typeof rgb === 'string') {
+            rgb = this.hexToRGB(rgb);
+        }
+
         for (let i = 0; i < this.COLOR_SEQ.length; i++) {
             if (this.isEqual(this.COLOR_SEQ[i], rgb)) {
                 this.currentColorIndex = i;
@@ -68,6 +72,9 @@ export class ColorHandler {
     }
 
     public static hexToRGB(hex: string): RGB {
+        if (hex[0] === '#') {
+            hex = hex.substring(1);
+        }
         const bigint: number = parseInt(hex, 16);
         const r: number = (bigint >> 16) & 255;
         const g: number = (bigint >> 8) & 255;

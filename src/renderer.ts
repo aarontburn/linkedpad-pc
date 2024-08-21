@@ -94,6 +94,12 @@
                 setSelectedColor(data[0]);
                 break;
             }
+            case 'linked-mode': {
+                if (data[0] === true) {
+                    getElement('linked-mode-slider').click()
+                }
+                break;
+            }
 
 
         }
