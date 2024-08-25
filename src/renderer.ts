@@ -96,7 +96,7 @@
             }
             case 'linked-mode': {
                 if (data[0] === true) {
-                    getElement('linked-mode-slider').click()
+                    getElement('linked-mode-slider').click();
                 }
                 break;
             }
@@ -199,15 +199,27 @@
             keySlotValues.push(slotValue === NO_KEY ? null : slotValue);
         }
         sendToProcess('set-key', selectedKey, keySlotValues);
+
+        getElement('save-button').classList.add('button-success');
+    });
+
+    getElement('clear-button').addEventListener('click', () => {
+        for (let i = 0; i < 4; i++) {
+            getElement(`key-slot-${i}`).innerHTML = NO_KEY;
+        }
+        setSelectedKey(selectedKey, 0);
     });
 
 
     const selectedKeyLabel: HTMLElement = getElement('selected-key-label');
     function setSelectedKey(rowCol: string, slotNum: number = 0) {
         if (slotNum < 0 || slotNum > 3) {
-            console.log("Invalid key slot passed: " + slotNum)
-            return
+            console.log("Invalid key slot passed: " + slotNum);
+            return;
         }
+
+        getElement('save-button').classList.remove('button-success')
+
 
 
         if (inLinkedMode) { // dont update in linked mode
@@ -220,8 +232,6 @@
             }
             selectedKey = rowCol;
             selectedKeyLabel.innerHTML = rowCol;
-
-
 
             const recordedKey: string | string[] = keyMap[selectedKey];
             const toggle: HTMLInputElement = getElement('keys-text-toggle') as HTMLInputElement;
@@ -295,7 +305,7 @@
 
 
 
-    function populateKeys(groups: { name: string, [key: string]: string }[]) {
+    function populateKeys(groups: { name: string, [key: string]: string | string[] }[]) {
         const keyBox: HTMLElement = getElement('keys')
         const groupBox: HTMLElement = getElement('type-list')
 
@@ -319,19 +329,32 @@
                     setCurrentSlot(undefined);
                 });
 
-                for (const keyName in group) {
-                    if (keyName === 'name') {
+                for (const internalKeyName in group) {
+                    if (internalKeyName === 'name') {
                         continue;
                     }
 
+                    // Either code or [code, displayname]
+                    const k: string | string[] = group[internalKeyName];
+
+                    let code: string = undefined;
+                    let displayName: string = undefined;
+                    if (typeof k !== 'string') {
+                        code = k[1]
+                        displayName = k[1];
+                    } else {
+                        code = k;
+                        displayName = internalKeyName;
+                    }
+
                     const html: string = `
-                        <div class='key' id='key-${keyName}'>
-                            <p>${keyName}</p>
+                        <div class='key' id='key-${internalKeyName}'>
+                            <p>${displayName}</p>
                         </div>
                     `
                     keyBox.insertAdjacentHTML("beforeend", html)
-                    getElement(`key-${keyName}`).addEventListener('click', () => {
-                        setCurrentSlot(keyName)
+                    getElement(`key-${internalKeyName}`).addEventListener('click', () => {
+                        setCurrentSlot(displayName)
                     });
                 }
             })
@@ -345,6 +368,8 @@
         }
 
         getElement(`key-slot-${selectedKeySlot}`).innerHTML = value ?? NO_KEY;
+        getElement('save-button').classList.remove('button-success');
+
     }
 
 

@@ -1,4 +1,4 @@
-import { BrowserWindow, IpcMain } from "electron";
+import { app, BrowserWindow, IpcMain, Menu, nativeImage, Tray } from "electron";
 import * as path from "path";
 import { LinkedPadProcess } from "./LinkedPadProcess";
 import { Settings } from "./Settings";
@@ -11,7 +11,7 @@ export class Process {
     private readonly ipc: Electron.IpcMain;
     private window: BrowserWindow;
     private rendererReady: boolean = false;
-    
+
 
     private linkedPad: LinkedPadProcess = new LinkedPadProcess(this.sendToRenderer.bind(this));
 
@@ -44,20 +44,49 @@ export class Process {
             autoHideMenuBar: true
         });
 
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: "Show",
+                type: "normal",
+                click: (() => {
+                    this.window.show();
+                }).bind(this)
+            },
+            {
+                label: "Quit",
+                type: "normal",
+                click: (() => {
+                    this.stop();
+                    app.quit()
+                }).bind(this)
+            }
+        ]);
+
+        const tray = new Tray(nativeImage.createEmpty());
+        tray.setToolTip("Linked Pad");
+        tray.on("click", () => (this.window.isVisible() ? this.window.hide() : this.window.show()));
+        tray.setContextMenu(contextMenu);
+
+
+
+
         this.window.loadFile(path.join(__dirname, "./view/index.html"));
 
-        this.window.on('close', () => {
-            this.stop();
+        this.window.on('close', (e) => {
+            if (this.window.isVisible()) {
+                this.window.hide();
+                e.preventDefault();
+            }
         });
 
     }
 
     private handleMainEvents(): void {
         this.ipc.handle(CHANNEL_NAME, (_, eventType: string, ...data: any[]) => {
-            
+
             this.linkedPad.handleEvent(eventType, ...data)
         });
-        
+
     }
 
     private sendToRenderer(eventType: string, ...data: any[]): void {

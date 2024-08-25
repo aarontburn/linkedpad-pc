@@ -1,4 +1,4 @@
-import { InterByteTimeoutParser, SerialPort } from 'serialport'
+import { InterByteTimeoutParser, ReadlineParser, SerialPort } from 'serialport'
 
 
 export class SerialHandler {
@@ -12,7 +12,7 @@ export class SerialHandler {
 
 
     private static ser: SerialPort;
-    private static parser: InterByteTimeoutParser;
+    private static parser: ReadlineParser;
 
     private static currentlyConnected: boolean = false;
     private static softwareConnected: boolean = false;
@@ -114,7 +114,7 @@ export class SerialHandler {
                         }
                         resolve(false)
                     }
-                    this.parser = this.ser.pipe(new InterByteTimeoutParser({ interval: 250 }));
+                    this.parser = this.ser.pipe(new ReadlineParser({ delimiter: '\n' }));
                     console.log(`Established serial connection on ${this.PORT}`);
 
                     resolve(true);

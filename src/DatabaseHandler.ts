@@ -19,11 +19,11 @@ export class DatabaseHandler {
     private static readonly HEADERS: string[] = ["H0", "H1", "H2", "H3"];
 
     private static recalibrate: () => void;
-    private static setLight: (row: string, col: string, isOn: any) => void;
+    private static setLight: (row: string, col: string, rgb: RGB) => void;
 
 
 
-    public static async initDatabase(recalibrate: () => void, setLight: (row: string, col: string, isOn: any) => void) {
+    public static async initDatabase(recalibrate: () => void, setLight: (row: string, col: string, rgb: RGB) => void) {
         this.recalibrate = recalibrate;
         this.setLight = setLight;
         console.log("Initializing database...");
@@ -120,7 +120,7 @@ export class DatabaseHandler {
     /**
      *  Reset all buttons to 0
      */
-    private static async reset() {
+    public static async reset() {
         // Iterate over A0, A1, ... D3, D4 and reset their entries to 0
         const object: any = {};
         for (const key of this.KEYS) {
@@ -132,7 +132,7 @@ export class DatabaseHandler {
             { '$set': object }, { returnDocument: 'after', upsert: true });
 
         for (const key in result) {
-            this.setLight(key[0], key[1], 0);
+            this.setLight(key[0], key[1], [0, 0, 0]);
         }
     }
     

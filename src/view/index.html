@@ -52,12 +52,38 @@
                         <p style="font-size: 25px;">Colors</p>
 
                         <div id="color-list">
+                            <!-- Color list goes here -->
+
+                            <div class="color" id="new-color"
+                                style="outline: 2px solid gray; line-height: 1px; color: lightgray;">
+                                +
+                            </div>
 
                         </div>
-                        <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">
-                            Brightness (50%)</p>
-                        <input type="range" min="1" max="100" style="width: 200px;" id="brightness-slider">
 
+                        <div id="color-input-div"
+                            style="transition: 0.5s; pointer-events: none; width: 0; height: 0; opacity: 0; padding: 15px;">
+                            <div style="display: flex;">
+                                <p style="margin-right: 15px;">Color: </p>
+                                <input id='color-selector' type="color">
+                            </div>
+
+                            <div style="display: flex;">
+                                <p class="save-button">Cancel</p>
+                                <p class="save-button">Save</p>
+                            </div>
+
+                        </div>
+
+
+
+
+
+                        <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">
+                            Brightness (50%)
+                        </p>
+
+                        <input type="range" min="1" max="100" style="width: 200px;" id="brightness-slider">
                     </div>
 
                     <table id="pad-preview">
@@ -104,7 +130,9 @@
                         </div>
 
                         <div style="display: flex; justify-content: end;">
-                            <p id="save-button">Save</p>
+                            <p id="clear-button" class="save-button">Clear</p>
+                            <div style="margin-right: auto;"></div>
+                            <p id="save-button" class="save-button">Save</p>
                         </div>
                     </div>
                     <div class="linked-settings">

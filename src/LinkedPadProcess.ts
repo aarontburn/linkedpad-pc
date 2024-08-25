@@ -1,8 +1,8 @@
-import { KeystrokeHandler } from "./KeystrokeHandler";
+import { KeyState, KeystrokeHandler } from "./KeystrokeHandler";
 import { ColorHandler, RGB } from "./ColorHandler";
 import { SerialHandler } from "./SerialHandler";
 import { DatabaseHandler } from "./DatabaseHandler";
-import { Setting, Settings } from "./Settings";
+import { Settings } from "./Settings";
 
 
 
@@ -59,6 +59,7 @@ export class LinkedPadProcess {
                     for (const rowCol in this.localState) {
                         SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
                     }
+                    
                     SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
                 }
             }).bind(this)
@@ -119,22 +120,28 @@ export class LinkedPadProcess {
             }
 
             default: {
-                const parseToRowCol = (s: string): [string, string] | undefined => {
-                    const data: string = (s.toString() as string).trim();
-            
+                const parseToRowCol = (s: string): [string, string, KeyState] | undefined => {
+                    const data: string[] = (s.toString() as string).trim().split(" ");
+
                     console.log("Serial (RAW):");
                     console.log(s);
-            
-                    if (data.length !== 2) {
-                        return undefined;
+
+                    if (data[0].length !== 2) {
+                        return undefined
                     }
+
+                    const rowCol: string = data[0];
+                    const state: KeyState = data[1] as KeyState
+
+                    console.log(rowCol + " " + state)
             
-                    return [data[0], data[1]];
+                    return [rowCol[0], rowCol[1], state];
                 }
 
-                const rowCol: [string, string] = parseToRowCol(eventString);
-                if (rowCol) {
-                    this.onPress(rowCol[0], rowCol[1]);
+                const rowColState: [string, string,KeyState] = parseToRowCol(eventString);
+                
+                if (rowColState) {
+                    this.onPress(rowColState[0], rowColState[1], rowColState[2]);
                 }
                 break;
             }
@@ -168,7 +175,7 @@ export class LinkedPadProcess {
     private handleLinkedHeaders(col: string): void {
         switch (col) {
             case '0': {     //  Color
-                this.setColor(ColorHandler.getNextColor())
+                this.setColor(ColorHandler.getNextColor());
                 break;
             }
             case '1': {     //  Brightness
@@ -176,7 +183,8 @@ export class LinkedPadProcess {
                 break;
             }
             case '2': {
-
+                SerialHandler.write('reset');
+                DatabaseHandler.reset()
                 break;
             }
             case '3': {
@@ -191,17 +199,22 @@ export class LinkedPadProcess {
 
     }
 
-    private async onPress(row: string, col: string): Promise<void> {
+    private async onPress(row: string, col: string, state: KeyState): Promise<void> {
         if (this.inLinkedMode) {
+            if (state !== 'down') {
+                return;
+            }
+
             if (row === 'H') {
                 this.handleLinkedHeaders(col);
                 return;
             }
             DatabaseHandler.onKeyPress(row, col, this.localState);
+
             return;
         }
         // Macro mode
-        KeystrokeHandler.pressMacroKey(row + col);
+        KeystrokeHandler.pressMacroKey(row + col, state);
     }
 
 
@@ -229,7 +242,7 @@ export class LinkedPadProcess {
     private setColor(rgb: RGB): void {
         ColorHandler.setColor(rgb);
         Settings.setSettingValue('selected_color', ColorHandler.rgbToHex(ColorHandler.getCurrentColor()))
-        SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`)
+        SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
         this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
     }
 
@@ -277,7 +290,7 @@ export class LinkedPadProcess {
                 const row: string = data[0];
                 const col: string = data[1];
 
-                this.onPress(row, col);
+                this.onPress(row, col, 'down');
                 break;
             }
 
@@ -290,9 +303,9 @@ export class LinkedPadProcess {
                 break;
             }
             case 'linked-mode': {
-                this.inLinkedMode = data[0];
-                Settings.setSettingValue('in_linked_mode', this.inLinkedMode)
-                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
+                this.inLinkedMode = data[0] as boolean;
+                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`, true);
+                Settings.setSettingValue('in_linked_mode', this.inLinkedMode);
                 break;
             }
             case 'brightness-modified': {

@@ -175,7 +175,7 @@ td:hover {
 	cursor: pointer;
 }
 
-#save-button {
+.save-button {
 	border: 1px solid gray;
 	border-radius: 5px;
 	width: fit-content;
@@ -186,9 +186,14 @@ td:hover {
 	color: gray
 }
 
-#save-button:hover {
+.save-button:hover {
 	border-color: white;
 	color: white
+}
+
+.button-success.button-success {
+	border-color: green;
+	color: green
 }
 
 
@@ -226,9 +231,15 @@ td:hover {
 	cursor: pointer;
 	margin: 5px;
 	transition: 0.05s;
+	display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 
 #color-list {
 	display: flex;
+	width: 210px;
+	flex-wrap: wrap;
+	flex-direction: row-reverse;
 }

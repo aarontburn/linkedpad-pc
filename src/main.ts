@@ -6,7 +6,6 @@ const main: Process = new Process(ipcMain, process.argv);
 
 app.whenReady().then(() => {
 	main.start();
-
 	app.on("activate", function () {
 		if (BrowserWindow.getAllWindows().length === 0) main.start();
 	});

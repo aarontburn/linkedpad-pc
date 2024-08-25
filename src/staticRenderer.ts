@@ -42,10 +42,10 @@
             case 'color-options': {
                 const colors: RGB[] = data[0];
 
-                const colorList: HTMLElement = getElement('color-list');
+                const colorList: HTMLElement = getElement('new-color');
                 for (const rgb of colors) {
                     const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
-                    colorList.insertAdjacentHTML('beforeend', `
+                    colorList.insertAdjacentHTML('beforebegin', `
                         <div 
                             class='color'  
                             style='background-color: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]});'
@@ -59,8 +59,28 @@
                     element.addEventListener('click', () => {
                         sendToProcess('selected-color-changed', hex);
                     });
-
                 }
+
+                getElement('new-color').addEventListener('click', () => {
+                    const colorInputDiv: HTMLElement = getElement('color-input-div');
+
+                    colorInputDiv.style.pointerEvents = 'all';
+                    colorInputDiv.style.width = '';
+                    colorInputDiv.style.height = '';
+                    colorInputDiv.style.opacity = '';
+                    colorInputDiv.style.padding = '';
+                });
+
+
+                const colorSelector: HTMLInputElement = getElement('color-selector') as HTMLInputElement;
+                colorSelector.addEventListener('input', () => {
+                    const hex: string = colorSelector.value;
+                })
+
+                colorSelector.addEventListener('focusout', () => {
+                    console.log(colorSelector.value)
+                })
+
                 break;
             }
             case 'brightness-changed': {
