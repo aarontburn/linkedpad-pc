@@ -1,8 +1,9 @@
 .setting-group {
-    border: 1px solid white;
+    border: 1px solid gray;
     padding: 15px;
     border-radius: 5px;
-    width: fit-content;
+    width: 100%;
+    margin: 15px;
 }
 
 .save-button {

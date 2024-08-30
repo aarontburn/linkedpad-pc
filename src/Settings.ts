@@ -37,9 +37,9 @@ export class Settings {
         new Setting<string>('Selected Color', 'selected_color', '#ffffff', true),
         new Setting<number>('Brightness', 'brightness', 0.1, true),
         new Setting<boolean>('In Linked Mode', 'in_linked_mode', false, true),
-        new Setting<number>('Macropad Key Brightness', 'macro_brightness', 0.3),
+
+        new Setting<string>('Macro Press Color', 'macro_press_color', '#ffffff'),
         new Setting<boolean>("Exit to tray", 'exit_to_tray', true),
-        new Setting<number>("Key Repeat Time (ms)", "repeat_time", 50),
     ];
 
     public static init(): void {

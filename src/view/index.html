@@ -159,10 +159,14 @@
 
 
         <div class="container" id="settings-tab" style="display: none;">
-            <div style="margin: 5px; display: flex;">
+            <div style="
+                margin: 5px;
+                display: flex;
+                flex-direction: column;
+                width: calc(100vw - 40px);">
+
                 <div class="setting-group">
                     <p style="font-size: 25px;">Standalone WiFi Setup</p>
-
                     <div>
                         <p>WiFi SSID (Name)</p>
                         <input id="wifi-ssid" type="text">
@@ -176,6 +180,38 @@
                     <p id="send-wifi" class="save-button">Send</p>
                     <p>Current status: <span id="wifi-status">Connecting</span></p>
                 </div>
+
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Brightness</p>
+                    <input type="range" min="1" max="100" id="brightness-setting" style="width: 100%;">
+
+
+                    <div style="display: flex; align-items: center; margin-top: 30px;">
+                        <p style="font-size: 25px; width: fit-content; margin-right: 10px;">Macro Press Color</p>
+                        <label id="macro-color-display"
+                            style="width: 32px; height: 32px; background-color: #ffffff; display: flex; border-radius: 10px;">
+                            <input type="color" id="macro-color-input" style='visibility: hidden' value="#ffffff">
+                        </label>
+                    </div>
+
+
+
+
+                </div>
+
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Exit Behavior</p>
+
+                    <form id="exit-behavior-form">
+                        <input type="radio" id="exit-to-tray-radio" name="exit-behavior-group" value="true">
+                        <label for="exit-to-tray-radio">Minimize To Tray</label><br>
+
+                        <input type="radio" id="exit-radio" name="exit-behavior-group" value="false">
+                        <label for="exit-radio">Exit Completely</label><br>
+                    </form>
+                </div>
+
+
             </div>
         </div>
     </div>

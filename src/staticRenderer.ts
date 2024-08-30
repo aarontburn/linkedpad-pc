@@ -88,6 +88,7 @@
                 const percent: number = Math.round(brightness * 100)
                 getElement('brightness-label').innerHTML = `Brightness (${percent}%)`;
                 (getElement('brightness-slider') as HTMLInputElement).value = `${percent}`;
+                (getElement('brightness-setting') as HTMLInputElement).value = `${percent}`;
                 break;
             }
             case 'connection-status': {

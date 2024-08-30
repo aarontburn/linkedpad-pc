@@ -46,7 +46,7 @@ export class LinkedPadProcess {
         ColorHandler.setColor(Settings.getSettingValue('selected_color'));
         this.inLinkedMode = Settings.getSettingValue('in_linked_mode');
 
-        
+
         SerialHandler.init(
             this.handleSerialEvents.bind(this),
             ((prevStatus: 0 | 1 | 2, status: 0 | 1 | 2) => {
@@ -59,7 +59,7 @@ export class LinkedPadProcess {
                     for (const rowCol in this.localState) {
                         SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
                     }
-                    
+
                     SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
                 }
             }).bind(this)
@@ -75,6 +75,7 @@ export class LinkedPadProcess {
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
         this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
         this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
+        this.sendToRenderer('settings', Settings.getSettingMap());
         this.sendToRenderer('linked-mode', this.inLinkedMode);
     }
 
@@ -113,9 +114,9 @@ export class LinkedPadProcess {
                 break
             }
 
-            case 'temp': {
-                const temp: string = split[1];
-                console.log("Current temperature: " + temp);
+            case 'status': {
+                const statusObject: { [key: string]: any } = JSON.parse(split.slice(1).join(''))
+                console.log(statusObject);
                 break;
             }
 
@@ -134,12 +135,12 @@ export class LinkedPadProcess {
                     const state: KeyState = data[1] as KeyState
 
                     console.log(rowCol + " " + state)
-            
+
                     return [rowCol[0], rowCol[1], state];
                 }
 
-                const rowColState: [string, string,KeyState] = parseToRowCol(eventString);
-                
+                const rowColState: [string, string, KeyState] = parseToRowCol(eventString);
+
                 if (rowColState) {
                     this.onPress(rowColState[0], rowColState[1], rowColState[2]);
                 }
@@ -152,12 +153,16 @@ export class LinkedPadProcess {
 
 
     private async setLight(row: string, col: string, rgb: RGB) {
+        if (row === 'H') {
+            return;
+        }
+
         this.localState[row + col] = rgb;
         // this.displayStateToConsole();
-        SerialHandler.write(`change ${row + col} ${JSON.stringify(rgb)}`)
+        SerialHandler.write(`change ${row + col} ${JSON.stringify(rgb)}`);
 
 
-        this.sendToRenderer('light-change', this.localState)
+        this.sendToRenderer('light-change', this.localState);
     }
 
 
@@ -324,6 +329,19 @@ export class LinkedPadProcess {
                 SerialHandler.write(`wifi-setup ${ssid} ${password}`);
                 break;
             }
+            case 'exit-action': {
+                const minimizeToTray: boolean = data[0];
+
+                Settings.setSettingValue('exit_to_tray', minimizeToTray);
+                break;
+            }
+            case 'macro-press-color': {
+                Settings.setSettingValue('macro_press_color', data[0]);
+                SerialHandler.write(`macro-press-color [${ColorHandler.hexToRGB(data[0])}]`)
+
+                break;
+            }
+
         }
     }
 

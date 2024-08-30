@@ -6,9 +6,9 @@ export class DatabaseHandler {
     private static readonly ACCESS_ID = ':3';
     private static readonly URI = "mongodb+srv://admin:j2MzVYcewmPjnzrG@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad";
 
-    private static readonly client: MongoClient = new MongoClient(this.URI);
-    private static readonly database: Db = this.client.db("pad_data");
-    private static readonly collection: Collection = this.database.collection("data");
+    private static client: MongoClient;
+    private static database: Db;
+    private static collection: Collection;
 
     private static ready: boolean = false;
 
@@ -24,6 +24,11 @@ export class DatabaseHandler {
 
 
     public static async initDatabase(recalibrate: () => void, setLight: (row: string, col: string, rgb: RGB) => void) {
+        this.client = new MongoClient(this.URI);
+        this.database = this.client.db("pad_data");
+        this.collection = this.database.collection("data");
+
+
         this.recalibrate = recalibrate;
         this.setLight = setLight;
         console.log("Initializing database...");
@@ -135,7 +140,7 @@ export class DatabaseHandler {
             this.setLight(key[0], key[1], [0, 0, 0]);
         }
     }
-    
+
 
 
 

@@ -97,6 +97,18 @@ export class KeystrokeHandler {
 
         if (keyList.length !== 0) {
             for (const key of keyList) {
+                if (key.includes('click')) {
+                    let mouseButton: string = 'left';
+                    if (key === MOUSE['RIGHT_CLICK'][0]) {
+                        mouseButton = 'right';
+                    } else if (key === MOUSE['MIDDLE_CLICK'][0]) {
+                        mouseButton = 'middle';
+                    }
+
+                    robot.mouseToggle(state === 'hold' ? 'down' : state, mouseButton);
+                    continue;
+                }
+
                 robot.keyToggle(key, state === 'hold' ? 'down' : state);
             }
         }
@@ -104,7 +116,7 @@ export class KeystrokeHandler {
 
 
     public static getKeyGroups(): KeyGroup[] {
-        return [ALPHA, NUMERIC, AUDIO, FUNCTIONS, MODIFIERS, CONTROLS, NUMPAD, SYMBOLS];
+        return [ALPHA, NUMERIC, AUDIO, FUNCTIONS, MODIFIERS, CONTROLS, NUMPAD, SYMBOLS, MOUSE];
     }
 
 
@@ -122,6 +134,16 @@ export type KeyState = 'hold' | 'down' | 'up';
 interface KeyGroup {
     name: string,
     [key: string]: string | string[]
+}
+
+
+
+export const MOUSE: KeyGroup = {
+    name: 'MOUSE',
+    LEFT_CLICK: ['click_left', 'Left Click'],
+    RIGHT_CLICK: ['click_right', 'Right Click'],
+    MIDDLE_CLICK: ['click_middle', 'Middle Click'],
+
 }
 
 

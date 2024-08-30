@@ -13,6 +13,10 @@
         return query;
     }
 
+    function getInputElement(id: string): HTMLInputElement {
+        return getElement(id) as HTMLInputElement;
+    }
+
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
             case 'wifi-change': {
@@ -39,15 +43,46 @@
 
                 break;
             }
+            case 'settings': {
+                const settingObj: { [settingID: string]: any } = data[0];
+
+                getInputElement('macro-color-input').value = `${settingObj['macro_press_color']}`
+                getInputElement(settingObj['exit_to_tray'] === true ? 'exit-to-tray-radio' : 'exit-radio').checked = true;
+                break;
+            }
         }
     });
 
+    const macroColorInput: HTMLInputElement = getInputElement('macro-color-input');
+    macroColorInput.addEventListener('input', () => {
+        sendToProcess('macro-press-color', macroColorInput.value);
+        getElement('macro-color-display').style.backgroundColor = macroColorInput.value;
+    });
+
+    const slider: HTMLInputElement = getInputElement('brightness-setting')
+    slider.addEventListener('input', () => {
+        sendToProcess('brightness-modified', slider.value);
+    });
+
+
 
     getElement('send-wifi').addEventListener('click', () => {
-        const ssid: string = (getElement('wifi-ssid') as HTMLInputElement).value;
-        const password: string = (getElement('wifi-password') as HTMLInputElement).value;
+        const ssid: string = getInputElement('wifi-ssid').value;
+        const password: string = getInputElement('wifi-password').value;
 
         sendToProcess('send-wifi', ssid, password);
     });
+
+    const radioButtons: string[] = ['exit-to-tray-radio', 'exit-radio'];
+    for (const radioButton of radioButtons) {
+        const input: HTMLInputElement = getInputElement(radioButton);
+        input.addEventListener('change', () => {
+            sendToProcess('exit-action', JSON.parse(input.value));
+        });
+    }
+
+
+
+
 
 })()

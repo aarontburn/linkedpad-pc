@@ -57,7 +57,7 @@ export class Process {
                 type: "normal",
                 click: (() => {
                     this.stop();
-                    app.quit()
+                    app.quit();
                 }).bind(this)
             }
         ]);
@@ -73,10 +73,17 @@ export class Process {
         this.window.loadFile(path.join(__dirname, "./view/index.html"));
 
         this.window.on('close', (e) => {
-            if (this.window.isVisible()) {
-                this.window.hide();
-                e.preventDefault();
+            if (Settings.getSettingValue('exit_to_tray') === true) {
+                if (this.window.isVisible()) {
+                    this.window.hide();
+                    e.preventDefault();
+                }
+            } else {
+                this.stop();
+                app.quit();
             }
+
+
         });
 
     }
