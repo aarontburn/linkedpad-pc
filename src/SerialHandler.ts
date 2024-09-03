@@ -1,10 +1,11 @@
-import { InterByteTimeoutParser, ReadlineParser, SerialPort } from 'serialport'
+import { ReadlineParser, SerialPort } from 'serialport'
 
 
 export class SerialHandler {
     private static readonly UNOPENED_PORT_ERR_MSG: string = 'Port is not open';
     private static readonly NO_DEVICE_FOUND_ERR_MSG: string = 'Opening COM3: File not found';
 
+    private static readonly PORT_TIMEOUT_MS: number = 5000;
 
     private static readonly PORT: string = 'COM3';
     private static readonly BAUD: number = 9600;
@@ -173,6 +174,14 @@ export class SerialHandler {
 
         });
         console.log("Listening to serial...");
+    }
+
+    private static async maintainConnection() {
+        setInterval(() => {
+            if (this.softwareConnected) {
+
+            }
+        }, this.PORT_TIMEOUT_MS);
     }
 
 
