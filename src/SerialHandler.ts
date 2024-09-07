@@ -72,16 +72,19 @@ export class SerialHandler {
     }
 
     public static stop(): void {
-        this.ser?.close((err) => {
-            if (err) {
-                if (err.message === this.UNOPENED_PORT_ERR_MSG) { // Port is not opened
-                    // Do nothing
-                } else {
-                    console.log("Error closing serial port.")
-                    console.log(err)
+        this.write('pc_exit', () => {
+            this.ser?.close((err) => {
+                if (err) {
+                    if (err.message === this.UNOPENED_PORT_ERR_MSG) { // Port is not opened
+                        // Do nothing
+                    } else {
+                        console.log("Error closing serial port.");
+                        console.log(err);
+                    }
                 }
-            }
-        });
+            });
+        }, true)
+
     }
 
 
@@ -135,7 +138,7 @@ export class SerialHandler {
                 for (const line of data) {
                     if (line === 'pi_ready') {
                         console.log("Connection formed with Pi.");
-                        this.write('pc_ready', false);
+                        this.write('pc_ready', undefined, false);
                         this.parser.removeListener('data', f)
                         resolve(true); // Resolves when a connection has been made
                     }
@@ -154,7 +157,7 @@ export class SerialHandler {
                 switch (line) {
                     case 'pi_ready': {
                         this.softwareConnected = true;
-                        this.write('pc_ready', false);
+                        this.write('pc_ready', undefined, false);
                         break;
                     }
                     case 'pi_exit': {
@@ -186,8 +189,11 @@ export class SerialHandler {
 
 
 
-    public static write(data: string, log: boolean = false): void {
+    public static write(data: string, callback?: (err: any) => void, log: boolean = false): void {
         this.ser?.write(data + "\n", (err) => {
+            if (callback !== undefined) {
+                callback(err);
+            }
             if (err) {
                 console.log(`Error writing "${data}"`);
                 console.log(err);

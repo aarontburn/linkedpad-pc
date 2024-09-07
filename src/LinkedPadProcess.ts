@@ -309,7 +309,7 @@ export class LinkedPadProcess {
             }
             case 'linked-mode': {
                 this.inLinkedMode = data[0] as boolean;
-                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`, true);
+                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`, undefined, true);
                 Settings.setSettingValue('in_linked_mode', this.inLinkedMode);
                 break;
             }
