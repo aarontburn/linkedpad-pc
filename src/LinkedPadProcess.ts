@@ -115,7 +115,8 @@ export class LinkedPadProcess {
             }
 
             case 'status': {
-                const statusObject: { [key: string]: any } = JSON.parse(split.slice(1).join(''))
+                const statusObject: { [key: string]: any } = JSON.parse(split.slice(1).join(''));
+                this.sendToRenderer('status', statusObject);
                 console.log(statusObject);
                 break;
             }
@@ -338,7 +339,15 @@ export class LinkedPadProcess {
             case 'macro-press-color': {
                 Settings.setSettingValue('macro_press_color', data[0]);
                 SerialHandler.write(`macro-press-color [${ColorHandler.hexToRGB(data[0])}]`)
+                break;
+            }
+            case 'serial-port': {
+                Settings.setSettingValue('serial_port', data[0]);
+                break;
+            }
 
+            default: {
+                console.log(`Uncaught event: ${eventType}`);
                 break;
             }
 

@@ -6,15 +6,15 @@
     <title>Linked Pad</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
 
-    <script defer src="../staticRenderer.js"></script>
+    <script defer src="../renderer2.js"></script>
     <script defer src="../renderer.js"></script>
     <script defer src="../settingsRenderer.js"></script>
 
 
     <link rel="stylesheet" href="./colors.css">
-    <link rel="stylesheet" href="./LinkedPadStyles.css">
-    <link rel="stylesheet" href="./external.css">
-    <link rel="stylesheet" href="./settings.css">
+    <link rel="stylesheet" href="./main_styles.css">
+    <link rel="stylesheet" href="./external_styles.css">
+    <link rel="stylesheet" href="./settings_styles.css">
 
 </head>
 
@@ -158,7 +158,7 @@
         </div>
 
 
-        <div class="container" id="settings-tab" style="display: none;">
+        <div class="container" id="settings-tab" style="display: none; overflow: scroll;">
             <div style="
                 margin: 5px;
                 display: flex;
@@ -178,7 +178,7 @@
                     </div>
 
                     <p id="send-wifi" class="save-button">Send</p>
-                    <p>Current status: <span id="wifi-status">Connecting</span></p>
+                    <p>Current status: <span id="wifi-status" style="color: gray;">Pending</span></p>
                 </div>
 
                 <div class="setting-group">
@@ -209,6 +209,14 @@
                         <input type="radio" id="exit-radio" name="exit-behavior-group" value="false">
                         <label for="exit-radio">Exit Completely</label><br>
                     </form>
+                </div>
+
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Serial Port</p>
+                    <input type="text" id="serial-port-input">
+                    <br />
+                    <button class="save-button" id="serial-save-input">Save</button>
+
                 </div>
 
 

@@ -40,6 +40,7 @@ export class Settings {
 
         new Setting<string>('Macro Press Color', 'macro_press_color', '#ffffff'),
         new Setting<boolean>("Exit to tray", 'exit_to_tray', true),
+        new Setting<string>("Serial Port", 'serial_port', 'COM3'),
     ];
 
     public static init(): void {

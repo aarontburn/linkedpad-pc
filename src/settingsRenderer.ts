@@ -17,6 +17,8 @@
         return getElement(id) as HTMLInputElement;
     }
 
+
+    let wifiConnectionStatus: boolean = false;
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
             case 'wifi-change': {
@@ -27,17 +29,21 @@
                     case 0: {
                         wifiStatus.innerHTML = 'Connecting...';
                         wifiStatus.style.color = 'yellow';
-                        break
+                        wifiConnectionStatus = true;
+                        break;
                     }
                     case -1: {
                         wifiStatus.innerHTML = 'Disconnected';
                         wifiStatus.style.color = 'red';
-                        break
+                        wifiConnectionStatus = false;
+
+                        break;
                     }
                     case 1: {
                         wifiStatus.innerHTML = 'Connected';
                         wifiStatus.style.color = 'green';
-                        break
+                        wifiConnectionStatus = false;
+                        break;
                     }
                 }
 
@@ -48,6 +54,21 @@
 
                 getInputElement('macro-color-input').value = `${settingObj['macro_press_color']}`
                 getInputElement(settingObj['exit_to_tray'] === true ? 'exit-to-tray-radio' : 'exit-radio').checked = true;
+                getInputElement('serial-port-input').value = `${settingObj['serial_port']}`
+                break;
+            }
+            case 'status': {
+                const statusObj: { [key: string]: any } = data[0];
+
+                const temp: number = statusObj['temp'];
+                const wifiConnection: boolean = statusObj['wifi'];
+
+                if (!wifiConnectionStatus) {
+                    const wifiStatus: HTMLElement = getElement('wifi-status');
+                    wifiStatus.innerHTML = wifiConnection ? 'Connected' : "Disconnected";
+                    wifiStatus.style.color = wifiConnection ? 'green' : 'red';
+                }
+
                 break;
             }
         }
@@ -80,6 +101,12 @@
             sendToProcess('exit-action', JSON.parse(input.value));
         });
     }
+
+    getInputElement('serial-save-input').addEventListener('click', () => {
+        const port: string = getInputElement('serial-port-input').value;
+
+        sendToProcess('serial-port', port);
+    });
 
 
 

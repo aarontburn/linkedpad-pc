@@ -1,15 +1,16 @@
 import { ReadlineParser, SerialPort } from 'serialport'
+import { Settings } from './Settings';
 
 
 export class SerialHandler {
     private static readonly UNOPENED_PORT_ERR_MSG: string = 'Port is not open';
-    private static readonly NO_DEVICE_FOUND_ERR_MSG: string = 'Opening COM3: File not found';
+    private static readonly NO_DEVICE_FOUND_ERR_MSG: string = 'File not found';
 
     private static readonly PORT_TIMEOUT_MS: number = 5000;
 
-    private static readonly PORT: string = 'COM3';
     private static readonly BAUD: number = 9600;
-    private static readonly SERIAL_NUMBER: string = '6&3AF0F9CE&0&14';
+    private static PORT: string = Settings.getSettingValue('serial_port');
+
 
 
     private static ser: SerialPort;
@@ -24,6 +25,8 @@ export class SerialHandler {
         serialEventHandler: (eventString: string) => void,
         connectionStatusCallback: (prevState: 0 | 1 | 2, status: 0 | 1 | 2) => void,
     ): void {
+        this.PORT = Settings.getSettingValue('serial_port');
+        
         let prevState: 0 | 1 | 2 = 0;
         this.monitorPhysicalConnection((nowConnected: boolean) => {
             let sentState: 0 | 1 | 2 = 0;
@@ -111,12 +114,12 @@ export class SerialHandler {
                 (err) => {
                     if (err) {
                         console.log("Error opening serial port.");
-                        if (err.message === this.NO_DEVICE_FOUND_ERR_MSG) {
+                        if (err.message.includes(this.NO_DEVICE_FOUND_ERR_MSG)) {
                             console.log("\tDevice (under COM3) not found.");
                         } else {
                             console.log('\t' + err);
                         }
-                        resolve(false)
+                        resolve(false);
                     }
                     this.parser = this.ser.pipe(new ReadlineParser({ delimiter: '\n' }));
                     console.log(`Established serial connection on ${this.PORT}`);
