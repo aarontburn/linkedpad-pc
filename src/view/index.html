@@ -54,30 +54,7 @@
                         <div id="color-list">
                             <!-- Color list goes here -->
 
-                            <div class="color" id="new-color"
-                                style="outline: 2px solid gray; line-height: 1px; color: lightgray;">
-                                +
-                            </div>
-
                         </div>
-
-                        <div id="color-input-div"
-                            style="transition: 0.5s; pointer-events: none; width: 0; height: 0; opacity: 0; padding: 15px;">
-                            <div style="display: flex;">
-                                <p style="margin-right: 15px;">Color: </p>
-                                <input id='color-selector' type="color">
-                            </div>
-
-                            <div style="display: flex;">
-                                <p class="save-button">Cancel</p>
-                                <p class="save-button">Save</p>
-                            </div>
-
-                        </div>
-
-
-
-
 
                         <p style="font-size: 25px; margin-top: 15px; white-space: nowrap;" id="brightness-label">
                             Brightness (50%)
@@ -178,11 +155,12 @@
                     </div>
 
                     <p id="send-wifi" class="save-button">Send</p>
-                    <p>Current status: <span id="wifi-status" style="color: gray;">Pending</span></p>
+                    <p>
+                     status: <span id="wifi-status" style="color: gray;">Pending</span></p>
                 </div>
 
                 <div class="setting-group">
-                    <p style="font-size: 25px;">Brightness</p>
+                    <p style="font-size: 25px;" id="brightness-setting-label">Brightness</p>
                     <input type="range" min="1" max="100" id="brightness-setting" style="width: 100%;">
 
 
@@ -212,7 +190,7 @@
                 </div>
 
                 <div class="setting-group">
-                    <p style="font-size: 25px;">Serial Port</p>
+                    <p style="font-size: 25px;">Serial Port </p>
                     <input type="text" id="serial-port-input">
                     <br />
                     <button class="save-button" id="serial-save-input">Save</button>

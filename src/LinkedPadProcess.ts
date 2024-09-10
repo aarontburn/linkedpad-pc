@@ -53,14 +53,17 @@ export class LinkedPadProcess {
                 this.sendToRenderer('connection-status', status);
 
                 if (prevStatus !== 2 && status === 2) { // Send data over
-                    SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
-                    SerialHandler.write(`brightness ${this.brightness}`);
+                    SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
 
                     for (const rowCol in this.localState) {
                         SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
                     }
 
-                    SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
+                    SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
+                    SerialHandler.write(`brightness ${this.brightness}`);
+
+
+
                 }
             }).bind(this)
         );

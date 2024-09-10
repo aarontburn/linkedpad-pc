@@ -1,10 +1,12 @@
 import { Collection, Db, MongoClient } from "mongodb";
 import { ColorHandler, RGB } from "./ColorHandler";
+import * as fs from "fs";
+
 
 
 export class DatabaseHandler {
-    private static readonly ACCESS_ID = ':3';
-    private static readonly URI = "mongodb+srv://admin:j2MzVYcewmPjnzrG@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad";
+    private static readonly ACCESS_ID: string = ':3';
+    private static URI: string;
 
     private static client: MongoClient;
     private static database: Db;
@@ -24,6 +26,10 @@ export class DatabaseHandler {
 
 
     public static async initDatabase(recalibrate: () => void, setLight: (row: string, col: string, rgb: RGB) => void) {
+        const [username, password]: string[] = fs.readFileSync(`${__dirname}/key.txt`, 'utf-8')?.split(' ');
+
+        this.URI = `mongodb+srv://${username}:${password}@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad`;
+
         this.client = new MongoClient(this.URI);
         this.database = this.client.db("pad_data");
         this.collection = this.database.collection("data");

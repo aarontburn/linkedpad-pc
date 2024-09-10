@@ -6,6 +6,7 @@ const PWD = path.join(__dirname, 'src');
 // These are all the files to copy into the "dist" folder
 const pathsToCopy = [
     PWD + "/view",
+    PWD + "/key.txt",
 ];
 
 pathsToCopy.forEach(file => {
