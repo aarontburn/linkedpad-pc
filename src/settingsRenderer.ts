@@ -52,6 +52,7 @@
             case 'settings': {
                 const settingObj: { [settingID: string]: any } = data[0];
 
+                getElement('macro-color-display').style.backgroundColor = `${settingObj['macro_press_color']}`;
                 getInputElement('macro-color-input').value = `${settingObj['macro_press_color']}`
                 getInputElement(settingObj['exit_to_tray'] === true ? 'exit-to-tray-radio' : 'exit-radio').checked = true;
                 getInputElement('serial-port-input').value = `${settingObj['serial_port']}`

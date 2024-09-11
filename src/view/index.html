@@ -62,14 +62,23 @@
                         <input type="range" min="1" max="100" style="width: 200px;" id="brightness-slider">
                     </div>
 
-                    <table id="pad-preview">
-                        <thead id="head">
-                            <!-- Header buttons go here -->
-                        </thead>
-                        <tbody id="table">
-                            <!-- Main buttons go here -->
-                        </tbody>
-                    </table>
+                    <div style="display: flex; align-items: center; flex-direction: column;">
+
+
+                        <table id="pad-preview">
+                            <thead id="head">
+                                <!-- Header buttons go here -->
+                            </thead>
+                            <tbody id="table">
+                                <!-- Main buttons go here -->
+                            </tbody>
+                        </table>
+
+                        <p id='database-connection' style="position: relative; height: 0">Connecting...</p>
+
+
+                    </div>
+
 
                     <div id="key-settings">
                         <div style="display: flex; align-items: center;">
@@ -207,12 +216,12 @@
                 <div class="setting-group">
                     <p style="font-size: 25px;">Standalone WiFi Setup</p>
                     <div>
-                        <p style="margin-top: 10px;">WiFi SSID (Name)</p>
+                        <p>WiFi SSID (Name)</p>
                         <input id="wifi-ssid" type="text">
                     </div>
 
                     <div>
-                        <p>WiFi Password</p>
+                        <p style="margin-top: 10px;">WiFi Password</p>
                         <input id='wifi-password' type="password">
                     </div>
 

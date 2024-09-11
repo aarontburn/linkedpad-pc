@@ -102,6 +102,10 @@
                 }
                 break;
             }
+            case 'database-connected': {
+                getElement('database-connection').style.display = 'none';
+                break;
+            }
 
 
         }

@@ -56,13 +56,20 @@ export class LinkedPadProcess {
 
                     SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
                     SerialHandler.write(`brightness ${Settings.getSettingValue('brightness')}`);
+                    SerialHandler.write(`color-options ${ColorHandler.getAvailableColors().map(ColorHandler.rgbToHex)}`);
                 }
             }).bind(this)
         );
 
 
         KeystrokeHandler.init();
-        DatabaseHandler.initDatabase(this.recalibrate.bind(this), this.setLight.bind(this));
+        DatabaseHandler.initDatabase(
+            this.recalibrate.bind(this), 
+            this.setLight.bind(this),
+            (() => {
+                this.sendToRenderer("database-connected")
+            }).bind(this)
+        );
 
 
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
@@ -74,7 +81,7 @@ export class LinkedPadProcess {
     }
 
     public onExit(): void {
-        SerialHandler.stop()
+        SerialHandler.stop();
     }
 
     private handleSerialEvents(eventString: string): void {
@@ -375,6 +382,7 @@ export class LinkedPadProcess {
                     this.setColor(ColorHandler.getAvailableColors()[0]);
                 }
                 this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
+                SerialHandler.write(`color-options ${ColorHandler.getAvailableColors().map(ColorHandler.rgbToHex)}`);
 
                 break;
             }

@@ -22,10 +22,17 @@ export class DatabaseHandler {
 
     private static recalibrate: () => void;
     private static setLight: (row: string, col: string, rgb: RGB) => void;
+    private static databaseReadyCallback: () => void;
 
 
 
-    public static async initDatabase(recalibrate: () => void, setLight: (row: string, col: string, rgb: RGB) => void) {
+    public static async initDatabase(
+        recalibrate: () => void, 
+        setLight: (row: string, col: string, rgb: RGB) => void,
+        databaseReadyCallback: () => void
+    ) {
+
+
         const [username, password]: string[] = fs.readFileSync(`${__dirname}/key.txt`, 'utf-8')?.split(' ');
 
         this.URI = `mongodb+srv://${username}:${password}@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad`;
@@ -35,16 +42,18 @@ export class DatabaseHandler {
         this.database = this.client.db("pad_data");
         this.collection = this.database.collection("data");
 
-
+        this.databaseReadyCallback = databaseReadyCallback;
         this.recalibrate = recalibrate;
         this.setLight = setLight;
         console.log("Initializing database...");
+
 
         this.checkDatabase().then(() => {
             this.collection.findOne({}).then(async data => {
                 this.ready = true;
                 await recalibrate();
-                this.listen().catch(() => this.initDatabase(recalibrate, setLight)); // Reboot if error
+                databaseReadyCallback()
+                this.listen().catch(() => this.initDatabase(recalibrate, setLight, databaseReadyCallback)); // Reboot if error
             });
         });
     }
@@ -124,7 +133,7 @@ export class DatabaseHandler {
             )
         } catch (e) {
             console.log("DB no longer connected. Reinitializing...");
-            this.initDatabase(this.recalibrate, this.setLight);
+            this.initDatabase(this.recalibrate, this.setLight, this.databaseReadyCallback);
         }
     }
 
