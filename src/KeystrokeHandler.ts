@@ -13,7 +13,7 @@ export class KeystrokeHandler {
 
     private static readonly HEADERS: string[] = ["H0", "H1", "H2", "H3"];
 
-    private static readonly keyMap: Map<string, string | string[]> = new Map();
+    private static readonly keyMap: Map<string, string[]> = new Map();
 
     // Stores name of key to combination
     private static readonly keyGroupMap: Map<string, string> = new Map();
@@ -57,13 +57,13 @@ export class KeystrokeHandler {
 
     }
 
-    public static setKey(rowCol: string, value: string | string[]): void {
+    public static setKey(rowCol: string, value: string[]): void {
         this.keyMap.set(rowCol, value);
         this.writeMapToStorage();
     }
 
-    private static keyMapToObj(): any {
-        const obj: { [rowCol: string]: (string | string[]) } = {}
+    private static keyMapToObj(): { [rowCol: string]: string[] } {
+        const obj: { [rowCol: string]: string[] } = {}
         this.keyMap.forEach((value, key) => {
             obj[key] = value ?? [null, null, null, null];
         });
@@ -77,19 +77,24 @@ export class KeystrokeHandler {
     }
 
 
-    public static getKeyMap(): { [rowCol: string]: (string | string[]) } {
+    public static getKeyMap(): { [rowCol: string]: string[] } {
         return this.keyMapToObj();
     }
 
     public static async pressMacroKey(rowCol: string, state: KeyState) {
-        const macro: string | string[] = this.keyMap.get(rowCol);
+        const macro: string[] = this.keyMap.get(rowCol);
         if (!macro || macro.length == 0) {
             return;
         }
 
-        if (typeof macro === "string") {
+        if (macro.length == 2) {
             if (state !== 'up') {
-                robot.typeString(macro);
+                robot.typeString(macro[0]);
+
+                if (JSON.parse(macro[0]) === true) {
+                    robot.keyTap('enter')
+                }
+
             }
             return;
         }

@@ -41,7 +41,7 @@ p {
 	border: 1px solid rgb(106, 106, 106);
 	border-top: 0;
 	height: 100%;
-	width: 100%;
+	width: calc(100% - 1px);
 	display: flex;
 }
 
@@ -177,14 +177,18 @@ td:hover {
 }
 
 .save-button {
-	border: 1px solid gray;
-	border-radius: 5px;
-	width: fit-content;
-	padding: 2.5px 15px;
-	margin-top: 10px;
-	cursor: pointer;
-	transition: 0.5s;
-	color: gray
+    border: 1px solid gray;
+    color: gray;
+    width: fit-content;
+    transition: 0.25s;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    background-color: transparent;
+    font-size: 16px;
+
 }
 
 .save-button:hover {

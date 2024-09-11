@@ -30,6 +30,7 @@ export class DatabaseHandler {
 
         this.URI = `mongodb+srv://${username}:${password}@linkedpad.qrzkm98.mongodb.net/?retryWrites=true&w=majority&appName=linkedpad`;
 
+        // Handle no key
         this.client = new MongoClient(this.URI);
         this.database = this.client.db("pad_data");
         this.collection = this.database.collection("data");

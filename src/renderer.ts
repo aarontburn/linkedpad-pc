@@ -49,7 +49,7 @@
 
     const NO_KEY: string = 'Ø';
 
-    let keyMap: { [rowCol: string]: (string | string[]) } = undefined;
+    let keyMap: { [rowCol: string]: string[] } = undefined;
 
     let selectedKey: string = undefined;
     let selectedKeySlot: number = 0;
@@ -188,7 +188,8 @@
         // If text mode, get text input
         if (useTextMode) {
             const text: string = (getElement('text-toggle') as HTMLInputElement).value;
-            sendToProcess('set-key', selectedKey, text);
+            const send: boolean = (getElement('send-text') as HTMLInputElement).checked;
+            sendToProcess('set-key', selectedKey, [JSON.stringify(send), text]);
             return;
         }
 
@@ -233,9 +234,10 @@
             selectedKey = rowCol;
             selectedKeyLabel.innerHTML = rowCol;
 
-            const recordedKey: string | string[] = keyMap[selectedKey];
+            const recordedKey: string[] = keyMap[selectedKey];
             const toggle: HTMLInputElement = getElement('keys-text-toggle') as HTMLInputElement;
-            if (typeof recordedKey === 'string') { // Text mode
+
+            if (recordedKey.length === 2) { // Text mode
                 toggle.checked = true;
                 toggle.dispatchEvent(new Event('change'))
 
@@ -243,10 +245,13 @@
                     getElement(`key-slot-${i}`).innerHTML = NO_KEY; // Or existing keys
                 }
 
-                (getElement('text-toggle') as HTMLInputElement).value = recordedKey;
+                (getElement('send-text') as HTMLInputElement).checked = JSON.parse(recordedKey[0]);
+                (getElement('text-toggle') as HTMLInputElement).value = recordedKey[1];
+
             } else {
                 toggle.checked = false;
                 toggle.dispatchEvent(new Event('change'));
+                (getElement('send-text') as HTMLInputElement).checked = false;
                 (getElement('text-toggle') as HTMLInputElement).value = '';
 
                 for (let i = 0; i < 4; i++) {

@@ -6,7 +6,7 @@
     margin: 15px;
 }
 
-.save-button {
+/* .save-button {
     border: 1px solid gray;
     color: gray;
     width: fit-content;
@@ -17,18 +17,29 @@
     margin-top: 15px;
     margin-bottom: 15px;
     background-color: transparent;
-}
+    font-size: 16px;
+} */
 
 .save-button:hover {
     border-color: white;
     color: white;
 }
 
-input[type=text], input[type=password] {
+input[type=text], input[type=password], textarea, .editable-span {
     color: white;
     background-color: var(--off-black);
     font-size: 18px;
     border: 1px solid white;
     border-radius: 5px;
     padding: 5px;
+}
+
+.color-setting {
+    /* border: 1px solid white; */
+    /* border-radius: 5px; */
+    /* height: 30px; */
+    /* width: 30px; */
+    display: flex;
+    align-items: center;
+
 }

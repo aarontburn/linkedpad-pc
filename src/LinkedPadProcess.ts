@@ -42,6 +42,9 @@ export class LinkedPadProcess {
     }
 
     public initialize(): void {
+        ColorHandler.setColorList((Settings.getSettingValue('color_list') as string).split(' ').filter(w => w));
+
+
         this.brightness = Settings.getSettingValue('brightness');
         ColorHandler.setColor(Settings.getSettingValue('selected_color'));
         this.inLinkedMode = Settings.getSettingValue('in_linked_mode');
@@ -123,6 +126,7 @@ export class LinkedPadProcess {
                 console.log(statusObject);
                 break;
             }
+
 
             default: {
                 const parseToRowCol = (s: string): [string, string, KeyState] | undefined => {
@@ -305,7 +309,7 @@ export class LinkedPadProcess {
 
             case 'set-key': {
                 const rowCol: string = data[0];
-                const keyInfo: string | string[] = data[1];
+                const keyInfo: string[] = data[1];
 
                 KeystrokeHandler.setKey(rowCol, keyInfo);
                 this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
@@ -323,6 +327,9 @@ export class LinkedPadProcess {
                 break;
             }
             case 'selected-color-changed': {
+
+
+
                 this.setColor(ColorHandler.hexToRGB(data[0]));
                 break
             }
@@ -348,6 +355,38 @@ export class LinkedPadProcess {
                 Settings.setSettingValue('serial_port', data[0]);
                 break;
             }
+
+            case 'colors-modified': {
+                const hexString: string = data[0];
+
+                const hexArray: string[] = hexString.split(' ').filter(w => w);
+
+                for (const hex of hexArray) {
+                    if (!ColorHandler.isValidHex(hex)) {
+                        return false;
+                    }
+                }
+
+                if (hexArray.length == 0) {
+                    Settings.setSettingValue('color_list', Settings.getSettingByID('color_list').getDefaultValue());
+                } else {
+                    Settings.setSettingValue('color_list', hexArray.join(' '));
+                }
+
+                ColorHandler.setColorList(hexArray.length === 0 ? undefined : hexArray);
+
+                this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
+
+
+
+                if (ColorHandler.getColorIndex(ColorHandler.getCurrentColor()) === -1) {
+                    this.setColor(ColorHandler.getAvailableColors()[0]);
+                    this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
+                }
+
+                return true;
+            }
+
 
             default: {
                 console.log(`Uncaught event: ${eventType}`);

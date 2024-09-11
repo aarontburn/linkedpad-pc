@@ -39,7 +39,6 @@
 
             <p id="pad-tab-button">Pad</p>
             <p id="settings-tab-button">Settings</p>
-            <!-- <p>Header 3</p> -->
 
         </div>
 
@@ -88,19 +87,25 @@
                             <p>Text</p>
                         </div>
 
-                        <input id="text-toggle" type="text" style="display: none;">
+                        <input id="text-toggle" type="text" style="display: none; justify-content: center; width: 100%;">
 
 
-                        <div id="key-toggle" style="display: flex;">
+                        <div id="key-toggle" style="display: flex; justify-content: center;">
                             <div class="key" style="margin-left: 0;" id="key-slot-0">
                                 <p>Ø</p>
                             </div>
+                            <div style="margin-right: auto;"></div>
+
                             <div class="key" id="key-slot-1">
                                 <p>Ø</p>
                             </div>
+                            <div style="margin-right: auto;"></div>
+
                             <div class="key" id="key-slot-2">
                                 <p>Ø</p>
                             </div>
+                            <div style="margin-right: auto;"></div>
+
                             <div class="key" style="margin-right: 0;" id="key-slot-3">
                                 <p>Ø</p>
                             </div>
@@ -108,6 +113,23 @@
 
                         <div style="display: flex; justify-content: end;">
                             <p id="clear-button" class="save-button">Clear</p>
+                            <div style="margin-right: auto;"></div>
+
+
+
+                            <div style="display: none; align-items: center;" id="enter-checkbox">
+
+                                <p style="margin-right: 10px;">Enter</p>
+
+                                <label class="switch">
+                                    <input type="checkbox" id="send-text">
+                                    <span class="slider round"></span>
+                                </label>
+                                
+                            </div>
+
+
+
                             <div style="margin-right: auto;"></div>
                             <p id="save-button" class="save-button">Save</p>
                         </div>
@@ -155,8 +177,7 @@
                     </div>
 
                     <p id="send-wifi" class="save-button">Send</p>
-                    <p>
-                     status: <span id="wifi-status" style="color: gray;">Pending</span></p>
+                    <p>WiFi Status: <span id="wifi-status" style="color: gray;">Pending</span></p>
                 </div>
 
                 <div class="setting-group">
@@ -190,10 +211,25 @@
                 </div>
 
                 <div class="setting-group">
-                    <p style="font-size: 25px;">Serial Port </p>
+                    <p style="font-size: 25px;">Serial Port</p>
                     <input type="text" id="serial-port-input">
                     <br />
                     <button class="save-button" id="serial-save-input">Save</button>
+
+                </div>
+
+
+
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Colors</p>
+
+                    <input type="text" style="width: 100%;" id='color-setting-list'>
+
+                    <!-- <span class='editable-span' id='color-setting-list' contenteditable="true" style="display: inline-block; width: 100%">
+
+                    </span> -->
+                    <button class="save-button" id="color-save-button">Save</button>
+                    
 
                 </div>
 

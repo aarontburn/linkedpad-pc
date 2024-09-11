@@ -35,14 +35,22 @@ export class Process {
     private createBrowserWindow(): void {
         this.window = new BrowserWindow({
             show: false,
-            height: WINDOW_DIMENSION.height,
-            width: WINDOW_DIMENSION.width,
+            height: Settings.getSettingValue('window_height'),
+            width: Settings.getSettingValue('window_width'),
+            x: Settings.getSettingValue('window_x'),
+            y: Settings.getSettingValue('window_y'),
+
             webPreferences: {
                 backgroundThrottling: false,
                 preload: path.join(__dirname, "preload.js"),
             },
             autoHideMenuBar: true
         });
+
+        if (Settings.getSettingValue('window_maximized') === true) {
+            this.window.maximize();
+
+        }
 
         const contextMenu = Menu.buildFromTemplate([
             {
@@ -57,7 +65,7 @@ export class Process {
                 type: "normal",
                 click: (() => {
                     this.stop();
-                    app.quit();
+                    app.exit();
                 }).bind(this)
             }
         ]);
@@ -80,7 +88,7 @@ export class Process {
                 }
             } else {
                 this.stop();
-                app.quit();
+                app.exit();
             }
 
 
@@ -91,7 +99,7 @@ export class Process {
     private handleMainEvents(): void {
         this.ipc.handle(CHANNEL_NAME, (_, eventType: string, ...data: any[]) => {
 
-            this.linkedPad.handleEvent(eventType, ...data)
+            return this.linkedPad.handleEvent(eventType, ...data)
         });
 
     }
@@ -109,6 +117,20 @@ export class Process {
     }
 
     private stop(): void {
+        // Save window dimensions
+        const isWindowMaximized: boolean = this.window.isMaximized();
+        const bounds: { width: number, height: number, x: number, y: number } = this.window.getBounds();
+
+
+        Settings.setSettingValue('window_width', bounds.width);
+        Settings.setSettingValue('window_height', bounds.height);
+        Settings.setSettingValue('window_x', bounds.x);
+        Settings.setSettingValue('window_y', bounds.y);
+        Settings.setSettingValue('window_maximized', isWindowMaximized);
+
+
+        console.log(Settings.getSettingMap())
+
         this.linkedPad.onExit();
     }
 

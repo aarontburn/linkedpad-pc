@@ -16,7 +16,7 @@ export class StorageHandler {
 
     public static async writeToStorage(fileName: string, contents: string): Promise<void> {
         await this._createDirectories();
-        await fs.promises.writeFile(this.PATH + fileName, contents);
+        fs.writeFileSync(this.PATH + fileName, contents);
     }
 
 

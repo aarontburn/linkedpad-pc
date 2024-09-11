@@ -40,9 +40,15 @@
     window.ipc.on(CHANNEL_NAME, async (_, eventType: string, ...data: any[]) => {
         switch (eventType) {
             case 'color-options': {
+                const colorList: HTMLElement = getElement('color-list');
+                while (colorList.firstChild) {
+                    colorList.removeChild(colorList.firstChild);
+                }
+
+
                 const colors: RGB[] = data[0];
 
-                const colorList: HTMLElement = getElement('color-list');
+
                 for (const rgb of colors) {
                     const hex: string = rgbToHex(rgb).substring(1); // get rid of the #
                     colorList.insertAdjacentHTML('beforeend', `
@@ -61,6 +67,7 @@
                     });
                 }
 
+                (getElement('color-setting-list') as HTMLInputElement).value = colors.map(rgbToHex).join(' ');
                 break;
             }
             case 'brightness-changed': {
@@ -107,12 +114,18 @@
     });
 
 
-    const toggle: HTMLElement = getElement('keys-text-toggle');
+    const toggle: HTMLInputElement = getElement('keys-text-toggle') as HTMLInputElement;
     const textToggle: HTMLElement = getElement('text-toggle')
     const keyToggle: HTMLElement = getElement('key-toggle')
+    const enterCheckbox: HTMLInputElement = getElement('enter-checkbox') as HTMLInputElement;
     toggle.addEventListener('change', () => {
-        textToggle.style.display = !(toggle as HTMLInputElement).checked ? 'none' : 'inline-block';
-        keyToggle.style.display = (toggle as HTMLInputElement).checked ? 'none' : 'flex';
+        textToggle.style.display = !toggle.checked ? 'none' : 'inline-block';
+        enterCheckbox.style.display = !toggle.checked ? 'none' : 'flex';
+
+        keyToggle.style.display = toggle.checked ? 'none' : 'flex';
+
     });
+
+
 
 })();

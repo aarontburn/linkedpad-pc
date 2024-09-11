@@ -2,6 +2,9 @@ export type RGB = [number, number, number]
 
 export class ColorHandler {
 
+
+
+
     public static readonly OFF: RGB = [0, 0, 0];
 
     public static readonly WHITE: RGB = [255, 255, 255];
@@ -10,19 +13,36 @@ export class ColorHandler {
     public static readonly GREEN: RGB = [0, 255, 0];
     public static readonly BLUE: RGB = [0, 0, 255];
     public static readonly VIOLET: RGB = [125, 0, 255];
+    public static readonly PEACH: RGB = [255, 196, 213];
 
-    private static readonly COLOR_SEQ: RGB[] = [
+
+    public static DEFAULT_COLORS: RGB[] = [
         ColorHandler.WHITE,
         ColorHandler.RED,
         ColorHandler.YELLOW,
         ColorHandler.GREEN,
         ColorHandler.BLUE,
-        ColorHandler.VIOLET
+        ColorHandler.VIOLET,
+        ColorHandler.PEACH,
     ]
 
+    private static COLOR_SEQ: RGB[] = this.DEFAULT_COLORS;
 
     private static currentColorIndex: number = 0;
     private static currentColor: RGB = this.COLOR_SEQ[this.currentColorIndex];
+
+
+    public static setColorList(hexArray: string[]): void {
+        if (hexArray === undefined) {
+            this.COLOR_SEQ = this.DEFAULT_COLORS;
+            return;
+        }
+
+        this.COLOR_SEQ = hexArray.map(this.hexToRGB);
+
+
+    }
+
 
     public static getCurrentColor(): RGB {
         return this.currentColor;
@@ -35,21 +55,32 @@ export class ColorHandler {
     }
 
 
+
     public static setColor(rgb: RGB | string): void {
         if (typeof rgb === 'string') {
             rgb = this.hexToRGB(rgb);
         }
 
-        for (let i = 0; i < this.COLOR_SEQ.length; i++) {
-            if (this.isEqual(this.COLOR_SEQ[i], rgb)) {
-                this.currentColorIndex = i;
-                this.currentColor = this.COLOR_SEQ[this.currentColorIndex];
-                return;
-            }
+
+        const index: number = this.getColorIndex(rgb);
+        if (index > -1) {
+            this.currentColorIndex = index;
+            this.currentColor = this.COLOR_SEQ[this.currentColorIndex];
+            return;
         }
 
         console.error("ERROR: Invalid rgb passed (rgb not within available colors): " + rgb);
         this.setColor(this.COLOR_SEQ[0]);
+    }
+
+    public static getColorIndex(rgb: RGB): number {
+        for (let i = 0; i < this.COLOR_SEQ.length; i++) {
+            if (this.isEqual(rgb, this.COLOR_SEQ[i])) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
 
@@ -81,6 +112,10 @@ export class ColorHandler {
         const b: number = bigint & 255;
 
         return [r, g, b];
+    }
+
+    public static isValidHex(hex: string): boolean {
+        return /^#[0-9A-F]{6}$/i.test(hex.toUpperCase());
     }
 
 
