@@ -87,7 +87,8 @@
                             <p>Text</p>
                         </div>
 
-                        <input id="text-toggle" type="text" style="display: none; justify-content: center; width: 100%;">
+                        <input id="text-toggle" type="text"
+                            style="display: none; justify-content: center; width: 100%;">
 
 
                         <div id="key-toggle" style="display: flex; justify-content: center;">
@@ -125,7 +126,7 @@
                                     <input type="checkbox" id="send-text">
                                     <span class="slider round"></span>
                                 </label>
-                                
+
                             </div>
 
 
@@ -165,20 +166,13 @@
                 width: calc(100vw - 40px);">
 
                 <div class="setting-group">
-                    <p style="font-size: 25px;">Standalone WiFi Setup</p>
-                    <div>
-                        <p>WiFi SSID (Name)</p>
-                        <input id="wifi-ssid" type="text">
-                    </div>
+                    <p style="font-size: 25px;">Colors</p>
 
-                    <div>
-                        <p>WiFi Password</p>
-                        <input id='wifi-password' type="password">
-                    </div>
-
-                    <p id="send-wifi" class="save-button">Send</p>
-                    <p>WiFi Status: <span id="wifi-status" style="color: gray;">Pending</span></p>
+                    <input type="text" style="width: 100%;" id='color-setting-list'>
+                    <button class="save-button" id="color-save-button">Save</button>
                 </div>
+
+
 
                 <div class="setting-group">
                     <p style="font-size: 25px;" id="brightness-setting-label">Brightness</p>
@@ -203,35 +197,38 @@
 
                     <form id="exit-behavior-form">
                         <input type="radio" id="exit-to-tray-radio" name="exit-behavior-group" value="true">
-                        <label for="exit-to-tray-radio">Minimize To Tray</label><br>
+                        <label for="exit-to-tray-radio" style="font-size: 18px;">Minimize To Tray</label><br>
 
                         <input type="radio" id="exit-radio" name="exit-behavior-group" value="false">
-                        <label for="exit-radio">Exit Completely</label><br>
+                        <label for="exit-radio" style="font-size: 18px;">Exit Completely</label><br>
                     </form>
+                </div>
+
+                <div class="setting-group">
+                    <p style="font-size: 25px;">Standalone WiFi Setup</p>
+                    <div>
+                        <p style="margin-top: 10px;">WiFi SSID (Name)</p>
+                        <input id="wifi-ssid" type="text">
+                    </div>
+
+                    <div>
+                        <p>WiFi Password</p>
+                        <input id='wifi-password' type="password">
+                    </div>
+
+                    <p id="send-wifi" class="save-button">Send</p>
+                    <p>WiFi Status: <span id="wifi-status" style="color: gray;">Pending</span></p>
                 </div>
 
                 <div class="setting-group">
                     <p style="font-size: 25px;">Serial Port</p>
                     <input type="text" id="serial-port-input">
-                    <br />
-                    <button class="save-button" id="serial-save-input">Save</button>
-
+                    <button class="save-button" id="serial-save-input" style="margin-left: 15px;">Save</button>
                 </div>
 
 
 
-                <div class="setting-group">
-                    <p style="font-size: 25px;">Colors</p>
 
-                    <input type="text" style="width: 100%;" id='color-setting-list'>
-
-                    <!-- <span class='editable-span' id='color-setting-list' contenteditable="true" style="display: inline-block; width: 100%">
-
-                    </span> -->
-                    <button class="save-button" id="color-save-button">Save</button>
-                    
-
-                </div>
 
 
             </div>

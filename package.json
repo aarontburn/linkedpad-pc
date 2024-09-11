@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A linked pad.",
   "scripts": {
-    "build": "tsc  && node copyFiles.js",
+    "build": "tsc && node copyFiles.js",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron ./dist/main.js",
     "package": "npm run build && npx electron-builder build"

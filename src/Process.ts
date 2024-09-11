@@ -44,15 +44,18 @@ export class Process {
                 backgroundThrottling: false,
                 preload: path.join(__dirname, "preload.js"),
             },
-            autoHideMenuBar: true
+            icon: `${__dirname}/view/linkedpad_icon.png`,
+            autoHideMenuBar: true,
         });
 
         if (Settings.getSettingValue('window_maximized') === true) {
             this.window.maximize();
-
         }
 
-        const contextMenu = Menu.buildFromTemplate([
+        const tray = new Tray(`${__dirname}/view/linkedpad_icon.png`);
+        tray.setToolTip("Linked Pad");
+        tray.on("click", () => (this.window.isVisible() ? this.window.hide() : this.window.show()));
+        tray.setContextMenu(Menu.buildFromTemplate([
             {
                 label: "Show",
                 type: "normal",
@@ -68,12 +71,7 @@ export class Process {
                     app.exit();
                 }).bind(this)
             }
-        ]);
-
-        const tray = new Tray(nativeImage.createEmpty());
-        tray.setToolTip("Linked Pad");
-        tray.on("click", () => (this.window.isVisible() ? this.window.hide() : this.window.show()));
-        tray.setContextMenu(contextMenu);
+        ]));
 
 
 

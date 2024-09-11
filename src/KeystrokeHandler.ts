@@ -1,8 +1,10 @@
 // @ts-ignore
 import * as robot from '@jitsi/robotjs';
 import { StorageHandler } from './StorageHandler';
+import { clipboard } from 'electron';
 
 robot.setKeyboardDelay(1);
+// keyboard.config.autoDelayMs = 0;
 
 export class KeystrokeHandler {
     private static readonly PATH: string = 'keys.json';
@@ -89,10 +91,30 @@ export class KeystrokeHandler {
 
         if (macro.length == 2) {
             if (state !== 'up') {
-                robot.typeString(macro[0]);
+                const formats: string[] = clipboard.availableFormats();
+
+                let isImage: boolean = false;
+                for (const format of formats) {
+                    if (format.includes('image')) {
+                        isImage = true;
+                        break;
+                    }
+                }
+
+                const oldClipboardContent: any = isImage ? clipboard.readImage() : clipboard.readText();
+
+                clipboard.writeText(macro[1]);
+                robot.keyTap('v', 'control');
+
+                if (isImage) {
+                    clipboard.writeImage(oldClipboardContent);
+                } else {
+                    clipboard.writeText(oldClipboardContent);
+                }
+
 
                 if (JSON.parse(macro[0]) === true) {
-                    robot.keyTap('enter')
+                    robot.keyTap('enter');
                 }
 
             }
@@ -132,7 +154,11 @@ export class KeystrokeHandler {
         return out.map(c => this.keyGroupMap.get(c));
     }
 
+
+
 }
+
+
 
 export type KeyState = 'hold' | 'down' | 'up';
 

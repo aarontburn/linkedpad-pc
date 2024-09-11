@@ -26,18 +26,20 @@ export class SerialHandler {
         connectionStatusCallback: (prevState: 0 | 1 | 2, status: 0 | 1 | 2) => void,
     ): void {
         this.PORT = Settings.getSettingValue('serial_port');
-        
+
         let prevState: 0 | 1 | 2 = 0;
-        this.monitorPhysicalConnection((nowConnected: boolean) => {
+        this.monitorPhysicalConnection((serialPortFound: boolean) => {
             let sentState: 0 | 1 | 2 = 0;
-            if (!SerialHandler.currentlyConnected && !nowConnected) { // Not connected before,still not connected now
+
+
+            if (!SerialHandler.currentlyConnected && !serialPortFound) { // Not connected before, still not connected now
                 // Do nothing, keep waiting for connection
                 SerialHandler.softwareConnected = false;
                 SerialHandler.attemptingToConnect = false;
                 sentState = 0;
 
 
-            } else if (!SerialHandler.currentlyConnected && nowConnected) { // Not connected before, connected now
+            } else if (!SerialHandler.currentlyConnected && serialPortFound) { // Not connected before, connected now
                 sentState = SerialHandler.softwareConnected ? 2 : 1;
 
                 if (!SerialHandler.attemptingToConnect || !SerialHandler.softwareConnected) {
@@ -49,19 +51,19 @@ export class SerialHandler {
                                 SerialHandler.softwareConnected = true;
                                 sentState = 2;
                                 this.listen(serialEventHandler);
-                            })
+                            });
                         }
                     });
                 }
 
 
 
-            } else if (SerialHandler.currentlyConnected && nowConnected) { // Connected before, connected now
+            } else if (SerialHandler.currentlyConnected && serialPortFound) { // Connected before, connected now but maybe not software connected
                 sentState = SerialHandler.softwareConnected ? 2 : 1;
 
 
                 // Do nothing, maintain connection
-            } else if (SerialHandler.currentlyConnected && !nowConnected) { // Connected before, not connected now
+            } else if (SerialHandler.currentlyConnected && !serialPortFound) { // Connected before, not connected now
                 SerialHandler.softwareConnected = false;
                 SerialHandler.attemptingToConnect = false;
                 sentState = 0;
@@ -69,12 +71,13 @@ export class SerialHandler {
             }
             connectionStatusCallback(prevState, sentState);
             prevState = sentState;
-            SerialHandler.currentlyConnected = nowConnected;
+            SerialHandler.currentlyConnected = serialPortFound;
         });
 
     }
 
     public static stop(): void {
+        console.log("Stopping serial connection.")
         this.write('pc_exit', () => {
             this.ser?.close((err) => {
                 if (err) {
@@ -107,6 +110,7 @@ export class SerialHandler {
 
     private static async establishSerial(): Promise<boolean> {
         return new Promise((resolve, reject) => {
+
             this.ser = new SerialPort({
                 path: this.PORT,
                 baudRate: this.BAUD,
@@ -115,7 +119,7 @@ export class SerialHandler {
                     if (err) {
                         console.log("Error opening serial port.");
                         if (err.message.includes(this.NO_DEVICE_FOUND_ERR_MSG)) {
-                            console.log("\tDevice (under COM3) not found.");
+                            console.log(`\tDevice (under ${this.PORT}) not found.`);
                         } else {
                             console.log('\t' + err);
                         }
@@ -182,13 +186,6 @@ export class SerialHandler {
         console.log("Listening to serial...");
     }
 
-    private static async maintainConnection() {
-        setInterval(() => {
-            if (this.softwareConnected) {
-
-            }
-        }, this.PORT_TIMEOUT_MS);
-    }
 
 
 

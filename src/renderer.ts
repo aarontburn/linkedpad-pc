@@ -190,6 +190,7 @@
             const text: string = (getElement('text-toggle') as HTMLInputElement).value;
             const send: boolean = (getElement('send-text') as HTMLInputElement).checked;
             sendToProcess('set-key', selectedKey, [JSON.stringify(send), text]);
+            getElement('save-button').classList.add('button-success');
             return;
         }
 

@@ -7,21 +7,17 @@ import { Settings } from "./Settings";
 
 
 
-
-
-
 export class LinkedPadProcess {
 
     private readonly KEYS: string[] = ["A", "B", "C", "D"]
         .flatMap(row => ["0", "1", "2", "3"]
             .map(col => row + col));
 
-    private readonly HEADERS: string[] = ["H0", "H1", "H2", "H3"];
 
     private localState: { [rowCol: string]: RGB } = (() => {
         const obj: { [rowCol: string]: RGB } = {};
         for (const rowCol of this.KEYS) {
-            obj[rowCol] = [0, 0, 0];
+            obj[rowCol] = ColorHandler.OFF;
         }
         return obj;
     })();
@@ -31,7 +27,6 @@ export class LinkedPadProcess {
 
     // 0.01, 0.1, 0.2, ..., 0.9, 1
     private brightnessSteps: number[] = [0.01, ...Array.from({ length: 10 }, (_, i) => (i + 1) / 10)];
-    private brightness: number;
     private brightnessIndex: number = 0;
 
 
@@ -43,10 +38,7 @@ export class LinkedPadProcess {
 
     public initialize(): void {
         ColorHandler.setColorList((Settings.getSettingValue('color_list') as string).split(' ').filter(w => w));
-
-
-        this.brightness = Settings.getSettingValue('brightness');
-        ColorHandler.setColor(Settings.getSettingValue('selected_color'));
+        this.setBrightness(Settings.getSettingValue('brightness'))
         this.inLinkedMode = Settings.getSettingValue('in_linked_mode');
 
 
@@ -56,17 +48,14 @@ export class LinkedPadProcess {
                 this.sendToRenderer('connection-status', status);
 
                 if (prevStatus !== 2 && status === 2) { // Send data over
-                    SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`);
+                    SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0} [${ColorHandler.getCurrentColor()}]`);
 
                     for (const rowCol in this.localState) {
                         SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
                     }
 
                     SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
-                    SerialHandler.write(`brightness ${this.brightness}`);
-
-
-
+                    SerialHandler.write(`brightness ${Settings.getSettingValue('brightness')}`);
                 }
             }).bind(this)
         );
@@ -76,7 +65,6 @@ export class LinkedPadProcess {
         DatabaseHandler.initDatabase(this.recalibrate.bind(this), this.setLight.bind(this));
 
 
-        this.setBrightness(this.brightness);
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
         this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
@@ -132,8 +120,7 @@ export class LinkedPadProcess {
                 const parseToRowCol = (s: string): [string, string, KeyState] | undefined => {
                     const data: string[] = (s.toString() as string).trim().split(" ");
 
-                    console.log("Serial (RAW):");
-                    console.log(s);
+                    console.log("Serial (RAW): " + s);
 
                     if (data[0].length !== 2) {
                         return undefined
@@ -141,8 +128,6 @@ export class LinkedPadProcess {
 
                     const rowCol: string = data[0];
                     const state: KeyState = data[1] as KeyState
-
-                    console.log(rowCol + " " + state)
 
                     return [rowCol[0], rowCol[1], state];
                 }
@@ -197,7 +182,7 @@ export class LinkedPadProcess {
             }
             case '2': {
                 SerialHandler.write('reset');
-                DatabaseHandler.reset()
+                DatabaseHandler.reset();
                 break;
             }
             case '3': {
@@ -260,20 +245,25 @@ export class LinkedPadProcess {
     }
 
     private setBrightness(newBrightness?: number): void {
-        if (newBrightness !== undefined) { // brightness is supplied by slider
-            for (let i = 0; i < this.brightnessSteps.length - 1; i++) {
-                if (this.brightness > this.brightnessSteps[i] && this.brightness < this.brightnessSteps[i + 1]) {
-                    this.brightnessIndex = i;
-                    break;
+        let currentBrightness: number = Settings.getSettingValue('brightness');
+        if (newBrightness !== undefined) { // brightness is supplied
+            if (this.brightnessSteps.includes(currentBrightness)) {
+                this.brightnessIndex = this.brightnessSteps.indexOf(currentBrightness);
+            } else {
+                for (let i = 0; i < this.brightnessSteps.length - 1; i++) {
+                    if (currentBrightness > this.brightnessSteps[i] && currentBrightness < this.brightnessSteps[i + 1]) {
+                        this.brightnessIndex = i;
+                        break;
+                    }
                 }
             }
-            this.brightness = newBrightness;
+
+            currentBrightness = newBrightness;
 
         } else { // Go to next step
-            if (!this.brightnessSteps.includes(this.brightness)) { // Current brightness isn't on a step
-                // Go to next step
+            if (!this.brightnessSteps.includes(currentBrightness)) { // Current brightness isn't on a step
                 for (let i = 0; i < this.brightnessSteps.length - 1; i++) {
-                    if (this.brightness > this.brightnessSteps[i] && this.brightness < this.brightnessSteps[i + 1]) {
+                    if (currentBrightness > this.brightnessSteps[i] && currentBrightness < this.brightnessSteps[i + 1]) {
                         this.brightnessIndex = i + 1;
                         break;
                     }
@@ -284,11 +274,11 @@ export class LinkedPadProcess {
                     this.brightnessIndex = 0;
                 }
             }
-            this.brightness = this.brightnessSteps[this.brightnessIndex];
+            currentBrightness = this.brightnessSteps[this.brightnessIndex];
         }
-        Settings.setSettingValue('brightness', this.brightness)
-        SerialHandler.write(`brightness ${this.brightness}`);
-        this.sendToRenderer('brightness-changed', this.brightness);
+        Settings.setSettingValue('brightness', currentBrightness);
+        SerialHandler.write(`brightness ${currentBrightness}`);
+        this.sendToRenderer('brightness-changed', currentBrightness);
     }
 
 
@@ -317,7 +307,7 @@ export class LinkedPadProcess {
             }
             case 'linked-mode': {
                 this.inLinkedMode = data[0] as boolean;
-                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0}`, undefined, true);
+                SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0} [${ColorHandler.getCurrentColor()}]`, undefined, true);
                 Settings.setSettingValue('in_linked_mode', this.inLinkedMode);
                 break;
             }
@@ -327,9 +317,6 @@ export class LinkedPadProcess {
                 break;
             }
             case 'selected-color-changed': {
-
-
-
                 this.setColor(ColorHandler.hexToRGB(data[0]));
                 break
             }
@@ -359,32 +346,37 @@ export class LinkedPadProcess {
             case 'colors-modified': {
                 const hexString: string = data[0];
 
-                const hexArray: string[] = hexString.split(' ').filter(w => w);
+                let hexArray: string[] = hexString.split(' ').filter(w => w);
 
+                let valid: boolean = hexArray.length > 0;
                 for (const hex of hexArray) {
                     if (!ColorHandler.isValidHex(hex)) {
-                        return false;
+                        valid = false;
                     }
                 }
 
-                if (hexArray.length == 0) {
-                    Settings.setSettingValue('color_list', Settings.getSettingByID('color_list').getDefaultValue());
-                } else {
+                if (valid) {
                     Settings.setSettingValue('color_list', hexArray.join(' '));
+                } else {
+                    if (hexArray.length === 0) {
+                        Settings.setSettingValue('color_list', Settings.getSettingByID('color_list').getDefaultValue());
+                    } else {
+                        // Don't set value
+                    }
                 }
 
-                ColorHandler.setColorList(hexArray.length === 0 ? undefined : hexArray);
+                hexArray = Settings.getSettingValue('color_list').split(" ").filter((w: string) => w);
+
+                ColorHandler.setColorList(hexArray);
 
                 this.sendToRenderer('color-options', ColorHandler.getAvailableColors());
 
-
-
                 if (ColorHandler.getColorIndex(ColorHandler.getCurrentColor()) === -1) {
                     this.setColor(ColorHandler.getAvailableColors()[0]);
-                    this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
                 }
+                this.sendToRenderer('selected-color', ColorHandler.getCurrentColor());
 
-                return true;
+                break;
             }
 
 

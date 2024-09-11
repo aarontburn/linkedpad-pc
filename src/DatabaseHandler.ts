@@ -143,7 +143,11 @@ export class DatabaseHandler {
             { 'accessID': this.ACCESS_ID },
             { '$set': object }, { returnDocument: 'after', upsert: true });
 
+
         for (const key in result) {
+            if (!this.KEYS.includes(key)) {
+                return
+            }
             this.setLight(key[0], key[1], [0, 0, 0]);
         }
     }

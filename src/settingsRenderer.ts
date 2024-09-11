@@ -111,9 +111,7 @@
 
 
     getInputElement('color-save-button').addEventListener('click', () => {
-        sendToProcess('colors-modified', getInputElement('color-setting-list').value).then(response => {
-            console.log(response)
-        })
+        sendToProcess('colors-modified', getInputElement('color-setting-list').value)
     });
 
 
