@@ -21,10 +21,12 @@ export class SerialHandler {
     private static attemptingToConnect: boolean = false;
 
 
-    public static init(
+    public static async init(
         serialEventHandler: (eventString: string) => void,
         connectionStatusCallback: (prevState: 0 | 1 | 2, status: 0 | 1 | 2) => void,
-    ): void {
+    ): Promise<void> {
+        console.log("Initializing serial listener...")
+
         this.PORT = Settings.getSettingValue('serial_port');
 
         let prevState: 0 | 1 | 2 = 0;
@@ -111,6 +113,8 @@ export class SerialHandler {
     private static async establishSerial(): Promise<boolean> {
         return new Promise((resolve, reject) => {
 
+            console.log("Attempting to establish serial")
+
             this.ser = new SerialPort({
                 path: this.PORT,
                 baudRate: this.BAUD,
@@ -190,6 +194,11 @@ export class SerialHandler {
 
 
     public static write(data: string, callback?: (err: any) => void, log: boolean = false): void {
+        if (this.ser?.destroyed) {
+            return
+        }
+
+
         this.ser?.write(data + "\n", (err) => {
             if (callback !== undefined) {
                 callback(err);

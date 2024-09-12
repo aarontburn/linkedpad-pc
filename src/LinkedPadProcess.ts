@@ -37,6 +37,7 @@ export class LinkedPadProcess {
     }
 
     public initialize(): void {
+
         ColorHandler.setColorList((Settings.getSettingValue('color_list') as string).split(' ').filter(w => w));
         this.setBrightness(Settings.getSettingValue('brightness'))
         this.inLinkedMode = Settings.getSettingValue('in_linked_mode');
@@ -50,9 +51,8 @@ export class LinkedPadProcess {
                 if (prevStatus !== 2 && status === 2) { // Send data over
                     SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0} [${ColorHandler.getCurrentColor()}]`);
 
-                    for (const rowCol in this.localState) {
-                        SerialHandler.write(`change ${rowCol} ${JSON.stringify(this.localState[rowCol])}`);
-                    }
+
+                    SerialHandler.write(`linked-state ${this.stateToString()}`);
 
                     SerialHandler.write(`selected-color [${ColorHandler.getCurrentColor()}]`);
                     SerialHandler.write(`brightness ${Settings.getSettingValue('brightness')}`);
@@ -70,7 +70,6 @@ export class LinkedPadProcess {
                 this.sendToRenderer("database-connected")
             }).bind(this)
         );
-
 
         this.sendToRenderer('update-keys', KeystrokeHandler.getKeyMap());
         this.sendToRenderer('key-options', KeystrokeHandler.getKeyGroups());
@@ -147,6 +146,24 @@ export class LinkedPadProcess {
                 break;
             }
         }
+
+
+    }
+
+    private stateToString(): string {
+        let out: string = '{';
+        let flag: boolean = false;
+        for (const rowCol in this.localState) {
+            if (flag) {
+                out += ","
+            }
+            out += `"${rowCol}":${JSON.stringify(this.localState[rowCol])}`
+            flag = true
+        }
+
+        out += '}'
+
+        return out;
 
 
     }
@@ -315,6 +332,8 @@ export class LinkedPadProcess {
             case 'linked-mode': {
                 this.inLinkedMode = data[0] as boolean;
                 SerialHandler.write(`linked-mode ${this.inLinkedMode ? 1 : 0} [${ColorHandler.getCurrentColor()}]`, undefined, true);
+                SerialHandler.write(`linked-state ${this.stateToString()}`);
+
                 Settings.setSettingValue('in_linked_mode', this.inLinkedMode);
                 break;
             }

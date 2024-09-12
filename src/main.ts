@@ -1,8 +1,14 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { Process } from "./Process";
 
 const ipcMain: Electron.IpcMain = require('electron').ipcMain;
 const main: Process = new Process(ipcMain, process.argv);
+
+
+if (!process.argv.includes('--dev')) {
+	Menu.setApplicationMenu(null);
+}
+
 
 app.whenReady().then(() => {
 	main.start();

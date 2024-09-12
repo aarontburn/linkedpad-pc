@@ -44,7 +44,7 @@ export class Process {
                 backgroundThrottling: false,
                 preload: path.join(__dirname, "preload.js"),
             },
-            icon: `${__dirname}/view/linkedpad_icon.png`,
+            icon: `${__dirname}/view/icon.png`,
             autoHideMenuBar: true,
         });
 
@@ -52,7 +52,7 @@ export class Process {
             this.window.maximize();
         }
 
-        const tray = new Tray(`${__dirname}/view/linkedpad_icon.png`);
+        const tray = new Tray(`${__dirname}/view/icon.png`);
         tray.setToolTip("Linked Pad");
         tray.on("click", () => (this.window.isVisible() ? this.window.hide() : this.window.show()));
         tray.setContextMenu(Menu.buildFromTemplate([
