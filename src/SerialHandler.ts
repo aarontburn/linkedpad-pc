@@ -128,6 +128,7 @@ export class SerialHandler {
                             console.log('\t' + err);
                         }
                         resolve(false);
+                        return
                     }
                     this.parser = this.ser.pipe(new ReadlineParser({ delimiter: '\n' }));
                     console.log(`Established serial connection on ${this.PORT}`);
