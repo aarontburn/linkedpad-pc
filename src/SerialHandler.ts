@@ -128,7 +128,7 @@ export class SerialHandler {
                             console.log('\t' + err);
                         }
                         resolve(false);
-                        return
+                        return;
                     }
                     this.parser = this.ser.pipe(new ReadlineParser({ delimiter: '\n' }));
                     console.log(`Established serial connection on ${this.PORT}`);
@@ -153,6 +153,7 @@ export class SerialHandler {
                         this.write('pc_ready', undefined, false);
                         this.parser.removeListener('data', f)
                         resolve(true); // Resolves when a connection has been made
+                        return;
                     }
                 }
             }
