@@ -1,0 +1,11 @@
+- Different Press Features:
+    - Soundboard
+    - CMD executor
+    - Running custom JS files
+
+
+- In linked mode, use H3 to see if the other person is online
+
+- Fix bug where if pad has no wifi and disconnects from PC software, it crashes
+
+- Save colors that the other person sends
