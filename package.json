@@ -19,6 +19,9 @@
 	},
 	"dependencies": {
 		"@jitsi/robotjs": "^0.6.13",
+		"ahk2.exe": "^1.0.1",
+		"ahknodejs": "github:aarontburn/AHKNodeJSFix",
+		"automately": "^1.0.3",
 		"mongodb": "^6.8.0",
 		"serialport": "^12.0.0"
 	},

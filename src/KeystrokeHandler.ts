@@ -2,8 +2,11 @@
 import * as robot from '@jitsi/robotjs';
 import { StorageHandler } from './StorageHandler';
 import { clipboard } from 'electron';
+import { keyboard } from 'automately';
+import * as path from 'path';
+// @ts-ignore
 
-robot.setKeyboardDelay(1);
+robot.setKeyboardDelay(0);
 // keyboard.config.autoDelayMs = 0;
 
 export class KeystrokeHandler {
@@ -17,10 +20,12 @@ export class KeystrokeHandler {
 
     private static readonly keyMap: Map<string, string[]> = new Map();
 
+    private static ahk: any;
+
     // Stores name of key to combination
     private static readonly keyGroupMap: Map<string, string> = new Map();
 
-    public static init(): void {
+    public static async init() {
         for (const keyGroup of this.getKeyGroups()) {
             for (const internalKeyName in keyGroup) {
                 if (internalKeyName === 'name') {
@@ -55,6 +60,9 @@ export class KeystrokeHandler {
                 this.keyMap.set(rowCol, [null, null, null, null]);
             }
         }
+
+
+        this.ahk = await require('ahknodejs')(require('ahk2.exe').path, [], { ahkV1: false })
         this.writeMapToStorage();
 
     }
@@ -91,28 +99,7 @@ export class KeystrokeHandler {
 
         if (macro.length == 2) {
             if (state !== 'up') {
-                const formats: string[] = clipboard.availableFormats();
-
-                let isImage: boolean = false;
-                for (const format of formats) {
-                    if (format.includes('image')) {
-                        isImage = true;
-                        break;
-                    }
-                }
-
-                const oldClipboardContent: any = isImage ? clipboard.readImage() : clipboard.readText();
-
-                clipboard.writeText(macro[1]);
-                robot.keyTap('v', 'control');
-
-                if (isImage) {
-                    clipboard.writeImage(oldClipboardContent);
-                } else {
-                    clipboard.writeText(oldClipboardContent);
-                }
-
-
+                await this.ahk.send(macro[1])
                 if (JSON.parse(macro[0]) === true) {
                     robot.keyTap('enter');
                 }
@@ -157,6 +144,9 @@ export class KeystrokeHandler {
 
 
 }
+
+
+
 
 
 
@@ -364,17 +354,6 @@ export const SYMBOLS: KeyGroup = {
     UNDERSCORE: ['_', '_'],
 
 };
-
-
-
-
-
-
-
-
-
-
-
 
 
 
